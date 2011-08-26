@@ -48,18 +48,15 @@ import javax.persistence.Id;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
-import org.dcm4che.data.Attributes;
-import org.dcm4che.data.Tag;
-
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
 @Entity
-@Table(name = "instance_cache")
-public class InstanceCache {
+@Table(name = "file_cache")
+public class FileCache {
 
-    private static final String NONE = "-";
+    public static final String NO_FILESET_ID = "-";
 
     @Id
     @GeneratedValue
@@ -71,8 +68,8 @@ public class InstanceCache {
     private Date createdTime;
 
     @Basic(optional = false)
-    @Column(name = "study_iuid", updatable = false)
-    private String studyInstanceUID;
+    @Column(name = "src_aet", updatable = false)
+    private String sourceAET;
 
     @Basic(optional = false)
     @Column(name = "series_iuid", updatable = false)
@@ -95,26 +92,9 @@ public class InstanceCache {
     private String filePath;
 
     @Basic(optional = false)
-    @Column(name = "src_aet", updatable = false)
-    private String sourceAET;
-
-    @Basic(optional = true)
     @Column(name = "fileset_id")
     private String filesetID;
 
-    public InstanceCache() {}
-
-    public InstanceCache(Attributes fmi, Attributes ds, String filePath) {
-        this.studyInstanceUID = ds.getString(Tag.StudyInstanceUID);
-        this.seriesInstanceUID = ds.getString(Tag.SeriesInstanceUID);
-        this.sopInstanceUID = fmi.getString(Tag.MediaStorageSOPInstanceUID);
-        this.sopClassUID = fmi.getString(Tag.MediaStorageSOPClassUID);
-        this.transferSyntaxUID = fmi.getString(Tag.TransferSyntaxUID);
-        this.sourceAET = fmi.getString(Tag.SourceApplicationEntityTitle);
-        this.filesetID = NONE;
-        this.filePath = filePath;
-    }
-    
     @PrePersist
     public void onPrePersist() {
         createdTime = new Date();
@@ -128,40 +108,60 @@ public class InstanceCache {
         return createdTime;
     }
 
-    public String getFilesetID() {
-        return filesetID;
+    public String getSourceAET() {
+        return sourceAET;
     }
 
-    public void setFilesetID(String filesetID) {
-        this.filesetID = filesetID;
-    }
-
-    public String getStudyInstanceUID() {
-        return studyInstanceUID;
+    public void setSourceAET(String sourceAET) {
+        this.sourceAET = sourceAET;
     }
 
     public String getSeriesInstanceUID() {
         return seriesInstanceUID;
     }
 
+    public void setSeriesInstanceUID(String seriesInstanceUID) {
+        this.seriesInstanceUID = seriesInstanceUID;
+    }
+
     public String getSopInstanceUID() {
         return sopInstanceUID;
+    }
+
+    public void setSOPInstanceUID(String sopInstanceUID) {
+        this.sopInstanceUID = sopInstanceUID;
     }
 
     public String getSopClassUID() {
         return sopClassUID;
     }
 
+    public void setSOPClassUID(String sopClassUID) {
+        this.sopClassUID = sopClassUID;
+    }
+
     public String getTransferSyntaxUID() {
         return transferSyntaxUID;
+    }
+
+    public void setTransferSyntaxUID(String transferSyntaxUID) {
+        this.transferSyntaxUID = transferSyntaxUID;
     }
 
     public String getFilePath() {
         return filePath;
     }
 
-    public String getSourceAET() {
-        return sourceAET;
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
+    public String getFilesetID() {
+        return filesetID;
+    }
+
+    public void setFilesetID(String filesetID) {
+        this.filesetID = filesetID;
     }
 
 }

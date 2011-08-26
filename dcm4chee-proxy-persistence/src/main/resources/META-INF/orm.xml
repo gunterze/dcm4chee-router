@@ -45,9 +45,9 @@
   <package>org.dcm4chee.proxy.persistence</package>
   
   <access>FIELD</access>
-  <entity class="InstanceCache">
-    <table name="instance_cache" />
-    <sequence-generator name="seq" sequence-name="instance_cache_pk_seq" />
+  <entity class="FileCache">
+    <table name="file_cache" />
+    <sequence-generator name="seq" sequence-name="file_cache_pk_seq" />
     <attributes>
       <id name="pk">
         <column name="pk" />

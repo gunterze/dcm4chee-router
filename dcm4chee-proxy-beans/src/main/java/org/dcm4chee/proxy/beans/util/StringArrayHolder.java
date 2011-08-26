@@ -36,26 +36,21 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.proxy.ejb;
-
-import javax.ejb.Stateless;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-
-import org.dcm4che.data.Attributes;
-import org.dcm4chee.proxy.persistence.InstanceCache;
+package org.dcm4chee.proxy.beans.util;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
  */
-@Stateless
-public class InstanceCacheManager {
+public class StringArrayHolder {
 
-    @PersistenceContext(unitName = "dcm4chee-proxy")
-    private EntityManager em;
+    private final String[] value;
 
-    public void add(Attributes fmi, Attributes ds, String filePath) {
-        em.persist(new InstanceCache(fmi, ds, filePath));
+    public StringArrayHolder(String[] value) {
+        this.value = value;
     }
+
+    public String[] getValue() {
+        return value;
+    }
+
 }
