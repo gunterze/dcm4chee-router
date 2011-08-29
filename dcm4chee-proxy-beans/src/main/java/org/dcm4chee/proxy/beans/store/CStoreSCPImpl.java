@@ -60,11 +60,11 @@ import org.dcm4chee.proxy.persistence.FileCache;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-public class CompositeCStoreSCP extends BasicCStoreSCP {
+public class CStoreSCPImpl extends BasicCStoreSCP {
 
     private FileCacheManager cacheMgr;
  
-    public CompositeCStoreSCP(String... sopClasses) {
+    public CStoreSCPImpl(String... sopClasses) {
         super(sopClasses);
     }
 

@@ -46,7 +46,7 @@
   <bean name="CEchoSCP" class="org.dcm4che.net.service.BasicCEchoSCP"/>
 
   <!-- CStoreSCP -->
-  <bean name="CStoreSCP" class="org.dcm4chee.proxy.beans.store.CompositeCStoreSCP">
+  <bean name="CStoreSCP" class="org.dcm4chee.proxy.beans.store.CStoreSCPImpl">
     <constructor>
       <parameter>
         <array>
