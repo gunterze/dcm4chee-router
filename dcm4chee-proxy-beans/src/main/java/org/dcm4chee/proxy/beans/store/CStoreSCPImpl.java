@@ -97,7 +97,7 @@ public class CStoreSCPImpl extends BasicCStoreSCP {
         fc.setSOPClassUID(ds.getString(Tag.SOPClassUID));
         fc.setTransferSyntaxUID(tsuid);
         fc.setFilePath(file.getPath());
-        fc.setFilesetID(FileCache.NO_FILESET_ID);
+        fc.setFilesetUID(FileCache.NO_FILESET_UID);
         try {
             cacheMgr.persist(fc);
         } catch (Exception e) {

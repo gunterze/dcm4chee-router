@@ -56,7 +56,7 @@ import javax.persistence.Table;
 @Table(name = "file_cache")
 public class FileCache {
 
-    public static final String NO_FILESET_ID = "-";
+    public static final String NO_FILESET_UID = "-";
 
     @Id
     @GeneratedValue
@@ -92,8 +92,8 @@ public class FileCache {
     private String filePath;
 
     @Basic(optional = false)
-    @Column(name = "fileset_id")
-    private String filesetID;
+    @Column(name = "fileset_uid")
+    private String filesetUID;
 
     @PrePersist
     public void onPrePersist() {
@@ -156,12 +156,12 @@ public class FileCache {
         this.filePath = filePath;
     }
 
-    public String getFilesetID() {
-        return filesetID;
+    public String getFilesetUID() {
+        return filesetUID;
     }
 
-    public void setFilesetID(String filesetID) {
-        this.filesetID = filesetID;
+    public void setFilesetUID(String filesetUID) {
+        this.filesetUID = filesetUID;
     }
 
 }
