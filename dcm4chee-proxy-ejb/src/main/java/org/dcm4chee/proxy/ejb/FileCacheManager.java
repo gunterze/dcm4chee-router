@@ -38,6 +38,9 @@
 
 package org.dcm4chee.proxy.ejb;
 
+import java.util.Date;
+import java.util.List;
+
 import javax.ejb.Local;
 
 import org.dcm4chee.proxy.persistence.FileCache;
@@ -50,4 +53,12 @@ import org.dcm4chee.proxy.persistence.FileCache;
 public interface FileCacheManager {
 
     void persist(FileCache fileCache);
+
+    List<String> findSeriesReceivedBefore(Date before);
+
+    List<String> findSourceAETsOfSeries(String seriesIUID);
+
+    int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
+
+    List<FileCache> findByFilesetUID(String fsUID);
 }

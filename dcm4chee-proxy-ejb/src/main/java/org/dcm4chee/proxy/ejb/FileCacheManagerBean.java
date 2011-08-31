@@ -38,6 +38,9 @@
 
 package org.dcm4chee.proxy.ejb;
 
+import java.util.Date;
+import java.util.List;
+
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -54,7 +57,42 @@ public class FileCacheManagerBean implements FileCacheManager {
     @PersistenceContext(unitName = "dcm4chee-proxy")
     private EntityManager em;
 
+    @Override
     public void persist(FileCache fileCache) {
         em.persist(fileCache);
     }
+
+    @Override
+    public List<String> findSeriesReceivedBefore(Date before) {
+        return em.createNamedQuery(FileCache.FIND_SERIES_RECEIVED_BEFORE, String.class)
+            .setParameter(1, FileCache.NO_FILESET_UID)
+            .setParameter(2, before)
+            .getResultList();
+    }
+
+    @Override
+    public List<String> findSourceAETsOfSeries(String seriesIUID) {
+        return em.createNamedQuery(FileCache.FIND_SOURCE_AETS_OF_SERIES, String.class)
+            .setParameter(1, FileCache.NO_FILESET_UID)
+            .setParameter(2, seriesIUID)
+            .getResultList();
+    }
+
+    @Override
+    public List<FileCache> findByFilesetUID(String fsUID) {
+        return em.createNamedQuery(FileCache.FIND_BY_FILESET_UID, FileCache.class)
+            .setParameter(1, fsUID)
+            .getResultList();
+    }
+
+    @Override
+    public int setFilesetUID(String fsUID, String seriesIUID, String sourceAET) {
+        return em.createNamedQuery(FileCache.UPDATE_FILESET_UID)
+            .setParameter(1, fsUID)
+            .setParameter(2, FileCache.NO_FILESET_UID)
+            .setParameter(3, seriesIUID)
+            .setParameter(4, sourceAET)
+            .executeUpdate();
+    }
+
 }

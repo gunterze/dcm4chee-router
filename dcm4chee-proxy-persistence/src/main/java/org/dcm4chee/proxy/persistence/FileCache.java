@@ -45,18 +45,43 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  *
  */
+@NamedQueries({
+    @NamedQuery(
+        name="FileCache.findSeriesReceivedBefore",
+        query="SELECT f.seriesInstanceUID FROM FileCache f WHERE f.filesetUID = ?1 "
+            + "GROUP BY f.seriesInstanceUID HAVING MAX(f.createdTime) < ?2"),
+    @NamedQuery(
+        name="FileCache.findSourceAETsOfSeries",
+        query="SELECT DISTINCT f.sourceAET FROM FileCache f WHERE f.filesetUID = ?1 "
+            + "AND f.seriesInstanceUID = ?2"),
+    @NamedQuery(
+        name="FileCache.findByFilesetUID",
+        query="SELECT f FROM FileCache f WHERE f.filesetUID = ?1"),
+    @NamedQuery(
+        name="FileCache.updateFilesetUID",
+        query="UPDATE FileCache f SET filesetUID = ?1 WHERE f.filesetUID = ?2 "
+            + "AND f.seriesInstanceUID = ?3 AND f.sourceAET = ?4")
+    })
 @Entity
 @Table(name = "file_cache")
 public class FileCache {
 
     public static final String NO_FILESET_UID = "-";
+    public static final String FIND_SERIES_RECEIVED_BEFORE = "FileCache.findSeriesReceivedBefore";
+    public static final String FIND_SOURCE_AETS_OF_SERIES = "FileCache.findSourceAETsOfSeries";
+    public static final String FIND_BY_FILESET_UID = "FileCache.findByFilesetUID";
+    public static final String UPDATE_FILESET_UID = "FileCache.updateFilesetUID";
 
     @Id
     @GeneratedValue
@@ -64,6 +89,7 @@ public class FileCache {
     private int pk;
 
     @Basic(optional = false)
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_time", updatable = false)
     private Date createdTime;
 
