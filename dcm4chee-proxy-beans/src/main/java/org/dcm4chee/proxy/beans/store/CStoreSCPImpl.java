@@ -43,6 +43,8 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 
+import javax.ejb.EJB;
+
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Tag;
 import org.dcm4che.io.DicomInputStream;
@@ -52,7 +54,6 @@ import org.dcm4che.net.Status;
 import org.dcm4che.net.service.BasicCStoreSCP;
 import org.dcm4che.net.service.DicomServiceException;
 import org.dcm4che.util.SafeClose;
-import org.dcm4chee.proxy.beans.util.JNDIUtils;
 import org.dcm4chee.proxy.ejb.FileCacheManager;
 import org.dcm4chee.proxy.persistence.FileCache;
 
@@ -62,6 +63,7 @@ import org.dcm4chee.proxy.persistence.FileCache;
  */
 public class CStoreSCPImpl extends BasicCStoreSCP {
 
+    @EJB
     private FileCacheManager cacheMgr;
  
     public CStoreSCPImpl(String... sopClasses) {
@@ -97,9 +99,6 @@ public class CStoreSCPImpl extends BasicCStoreSCP {
         fc.setFilePath(file.getPath());
         fc.setFilesetID(FileCache.NO_FILESET_ID);
         try {
-            if (cacheMgr == null)
-                cacheMgr = (FileCacheManager)
-                        JNDIUtils.lookup(FileCacheManager.JNDI_NAME);
             cacheMgr.persist(fc);
         } catch (Exception e) {
             throw new DicomServiceException(rq,

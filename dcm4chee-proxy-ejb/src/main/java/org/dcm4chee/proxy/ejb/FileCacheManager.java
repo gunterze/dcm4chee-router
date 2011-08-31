@@ -49,8 +49,5 @@ import org.dcm4chee.proxy.persistence.FileCache;
 @Local
 public interface FileCacheManager {
 
-    public static final String JNDI_NAME = "FileCacheManagerBean/local";
-
     void persist(FileCache fileCache);
-
 }

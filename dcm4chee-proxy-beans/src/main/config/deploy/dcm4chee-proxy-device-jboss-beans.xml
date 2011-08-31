@@ -63,16 +63,17 @@
     <property name="scheduledExecutor">
       <inject bean="ScheduledExecutorService" />
     </property>
-    <incallback method="addConnection" />
-    <uncallback method="removeConnection" />
-    <incallback method="addApplicationEntity" />
-    <uncallback method="removeApplicationEntity" />
+    <start method="activate" />
+    <stop method="deactivate" />
+    <demand>jndi:FileCacheManagerBean</demand>
     <install method="setProperty">
       <parameter>dcm4chee.proxy.cache.path</parameter>
       <parameter>${jboss.server.data.dir}</parameter>
     </install>
-    <start method="activate" />
-    <stop method="deactivate" />
+    <incallback method="addConnection" />
+    <uncallback method="removeConnection" />
+    <incallback method="addApplicationEntity" />
+    <uncallback method="removeApplicationEntity" />
   </bean>
 
 
