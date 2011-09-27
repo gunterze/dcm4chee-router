@@ -38,18 +38,23 @@
 
 package org.dcm4chee.proxy.ejb;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import javax.ejb.EJB;
+import javax.ejb.EJBException;
+import javax.ejb.Schedule;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import org.dcm4chee.proxy.persistence.FileCache;
+import org.dcm4chee.proxy.persistence.ForwardTask;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
 @Stateless
 public class FileCacheManagerBean implements FileCacheManager {
@@ -57,6 +62,9 @@ public class FileCacheManagerBean implements FileCacheManager {
     @PersistenceContext(unitName = "dcm4chee-proxy")
     private EntityManager em;
 
+    @EJB
+    private ForwardTaskManager forwardTaskMgr;
+    
     @Override
     public void persist(FileCache fileCache) {
         em.persist(fileCache);
@@ -93,6 +101,30 @@ public class FileCacheManagerBean implements FileCacheManager {
             .setParameter(3, seriesIUID)
             .setParameter(4, sourceAET)
             .executeUpdate();
+    }
+
+    @Override
+    @Schedule(minute="*/5", hour="*", persistent=false)
+    public void fileUpdateTimer() {
+        try{
+            Calendar interval = Calendar.getInstance();
+            interval.add(Calendar.MINUTE, -5);
+            List<String> newSeriesList = findSeriesReceivedBefore(interval.getTime());
+            for (String seriesIUID : newSeriesList){
+                List<String> sourceAETs = findSourceAETsOfSeries(seriesIUID);
+                for (String aet : sourceAETs){
+                    String fsUID =  aet + "_" + seriesIUID;
+                    setFilesetUID(fsUID, seriesIUID, aet);
+                    ForwardTask ft = new ForwardTask();
+                    ft.setFilesetUID(fsUID);
+                    ft.setSeriesInstanceUID(seriesIUID);
+                    ft.setStatusCode(ft.SCHEDULED);
+                    forwardTaskMgr.persist(ft);
+                }
+            }
+        } catch (Exception e) {
+            throw new EJBException(e);
+        }
     }
 
 }

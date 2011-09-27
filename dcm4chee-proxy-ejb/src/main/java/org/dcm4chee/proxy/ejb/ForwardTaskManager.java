@@ -38,29 +38,19 @@
 
 package org.dcm4chee.proxy.ejb;
 
-import java.util.Date;
-import java.util.List;
-
 import javax.ejb.Local;
 
-import org.dcm4chee.proxy.persistence.FileCache;
+import org.dcm4chee.proxy.persistence.ForwardTask;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
+ * 
  */
 @Local
-public interface FileCacheManager {
+public interface ForwardTaskManager {
+    
+    void persist(ForwardTask forwardTask);
 
-    void persist(FileCache fileCache);
+    void scheduleForwardTask(String fsUID, String seriesIUID);
 
-    List<String> findSeriesReceivedBefore(Date before);
-
-    List<String> findSourceAETsOfSeries(String seriesIUID);
-
-    int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
-
-    List<FileCache> findByFilesetUID(String fsUID);
-
-    void fileUpdateTimer();
 }

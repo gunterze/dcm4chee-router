@@ -38,29 +38,31 @@
 
 package org.dcm4chee.proxy.ejb;
 
-import java.util.Date;
-import java.util.List;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
-import javax.ejb.Local;
-
-import org.dcm4chee.proxy.persistence.FileCache;
+import org.dcm4chee.proxy.persistence.ForwardTask;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
+ * 
  */
-@Local
-public interface FileCacheManager {
+@Stateless
+public class ForwardTaskManagerBean implements ForwardTaskManager {
+    
+    
+    @PersistenceContext(unitName = "dcm4chee-proxy")
+    private EntityManager em;
 
-    void persist(FileCache fileCache);
+    @Override
+    public void persist(ForwardTask forwardTask) {
+        em.persist(forwardTask);
+    }
 
-    List<String> findSeriesReceivedBefore(Date before);
+    @Override
+    public void scheduleForwardTask(String fsUID, String seriesIUID) {
+        //TODO
+    }
 
-    List<String> findSourceAETsOfSeries(String seriesIUID);
-
-    int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
-
-    List<FileCache> findByFilesetUID(String fsUID);
-
-    void fileUpdateTimer();
 }
