@@ -38,10 +38,16 @@
 
 package org.dcm4chee.proxy.ejb;
 
+import java.util.List;
+
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import org.dcm4che.util.UIDUtils;
 import org.dcm4chee.proxy.persistence.ForwardTask;
 
 /**
@@ -51,6 +57,11 @@ import org.dcm4chee.proxy.persistence.ForwardTask;
 @Stateless
 public class ForwardTaskManagerBean implements ForwardTaskManager {
     
+    @EJB
+    private FileCacheManager fcMgr;
+    
+    @EJB
+    private AeProperties aeProperties;
     
     @PersistenceContext(unitName = "dcm4chee-proxy")
     private EntityManager em;
@@ -61,8 +72,21 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     }
 
     @Override
-    public void scheduleForwardTask(String fsUID, String seriesIUID) {
-        //TODO
+    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+    public void scheduleForwardTask(String seriesIUID) {
+        List<String> sourceAETs = fcMgr.findSourceAETsOfSeries(seriesIUID);
+        for (String aet : sourceAETs){
+            String fsUID = UIDUtils.createUID();
+            fcMgr.setFilesetUID(fsUID, seriesIUID, aet);
+            String[] targetAETs = aeProperties.getTargetAETs(aet);
+            for (String targetAET : targetAETs) {
+                ForwardTask ft = new ForwardTask();
+                ft.setFilesetUID(fsUID);
+                ft.setFilesetStatus(ft.SCHEDULED);
+                ft.setTargetAET(targetAET);
+                persist(ft);
+            }
+        }
+        //TODO: schedule send task
     }
-
 }

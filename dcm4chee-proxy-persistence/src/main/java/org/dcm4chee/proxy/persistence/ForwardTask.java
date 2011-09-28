@@ -69,10 +69,6 @@ public class ForwardTask {
     private int pk;
     
     @Basic(optional = false)
-    @Column(name = "series_iuid", updatable = false, unique = true)
-    private String seriesInstanceUID;
-    
-    @Basic(optional = false)
     @Column(name = "fileset_uid", unique = true)
     private String filesetUID;
     
@@ -83,6 +79,10 @@ public class ForwardTask {
     @Basic(optional = true)
     @Column(name = "status_code")
     private String statusCode;
+    
+    @Basic(optional = false)
+    @Column(name = "target_aet")
+    private String targetAET;
 
     public void setPk(int pk) {
         this.pk = pk;
@@ -90,14 +90,6 @@ public class ForwardTask {
 
     public int getPk() {
         return pk;
-    }
-
-    public void setSeriesInstanceUID(String seriesInstanceUID) {
-        this.seriesInstanceUID = seriesInstanceUID;
-    }
-
-    public String getSeriesInstanceUID() {
-        return seriesInstanceUID;
     }
 
     public void setFilesetUID(String filesetUID) {
@@ -122,5 +114,13 @@ public class ForwardTask {
 
     public String getStatusCode() {
         return statusCode;
+    }
+
+    public void setTargetAET(String targetAET) {
+        this.targetAET = targetAET;
+    }
+
+    public String getTargetAET() {
+        return targetAET;
     }
 }

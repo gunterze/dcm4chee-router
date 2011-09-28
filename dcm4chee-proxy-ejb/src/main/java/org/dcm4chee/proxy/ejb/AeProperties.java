@@ -38,19 +38,32 @@
 
 package org.dcm4chee.proxy.ejb;
 
-import javax.ejb.Local;
+import java.io.IOException;
+import java.util.Properties;
 
-import org.dcm4chee.proxy.persistence.ForwardTask;
+import javax.ejb.Singleton;
+
+import org.dcm4che.tool.common.CLIUtils;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  * 
  */
-@Local
-public interface ForwardTaskManager {
+@Singleton
+public class AeProperties {
     
-    void persist(ForwardTask forwardTask);
+    private Properties aeConfig;
 
-    void scheduleForwardTask(String seriesIUID);
-
+    public AeProperties() throws IOException {
+        try {
+            aeConfig = CLIUtils.loadProperties("resource:ae.properties", null);
+        } catch (IOException e) {
+            throw new IOException(e.getMessage(), e.getCause());
+        }
+    }
+    
+    public String[] getTargetAETs(String sourceAET) {
+        String targetAETs = aeConfig.getProperty(sourceAET);
+        return targetAETs.split("\\");
+    }
 }
