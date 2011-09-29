@@ -36,22 +36,15 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.proxy.ejb;
 
-import javax.ejb.Local;
-import javax.jms.JMSException;
-
-import org.dcm4chee.proxy.persistence.ForwardTask;
+package org.dcm4chee.proxy.beans.send;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  * 
  */
-@Local
-public interface ForwardTaskManager {
+public class CStoreSCUImpl  {
     
-    void persist(ForwardTask forwardTask);
-
-    void scheduleForwardTask(String seriesIUID) throws JMSException;
+    
 
 }

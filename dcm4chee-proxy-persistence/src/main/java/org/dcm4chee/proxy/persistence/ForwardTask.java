@@ -52,8 +52,9 @@ import javax.persistence.Table;
  */
 @NamedQueries({
     @NamedQuery(
-            name="//TODO//",
-            query="//TODO//")
+            name = "ForwadTask.findPK",
+            query = "Select f.pk from ForwardTask f where f.filesetUID = ?1"
+                  + "AND f.targetAET = ?2")
 })
 @Entity
 @Table(name = "forward_task")
@@ -62,6 +63,8 @@ public class ForwardTask {
     public final String SCHEDULED = "scheduled";
     public final String COMPLETED = "completed";
     public final String ERROR = "error";
+    
+    public static final String FIND_PK = "ForwadTask.findPK";
     
     @Id
     @GeneratedValue

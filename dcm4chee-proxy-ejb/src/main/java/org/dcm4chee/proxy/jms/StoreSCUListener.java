@@ -36,22 +36,35 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.proxy.ejb;
+package org.dcm4chee.proxy.jms;
 
-import javax.ejb.Local;
-import javax.jms.JMSException;
+import javax.ejb.ActivationConfigProperty;
+import javax.ejb.EJBException;
+import javax.ejb.MessageDriven;
+import javax.jms.Message;
+import javax.jms.MessageListener;
 
 import org.dcm4chee.proxy.persistence.ForwardTask;
+
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  * 
  */
-@Local
-public interface ForwardTaskManager {
+@MessageDriven(mappedName="jms/StoreSCU", activationConfig={
+        @ActivationConfigProperty(
+                propertyName="destinationType",
+                propertyValue="javax.jms.Queue")})
+public class StoreSCUListener implements MessageListener{
     
-    void persist(ForwardTask forwardTask);
-
-    void scheduleForwardTask(String seriesIUID) throws JMSException;
+    @Override
+    public void onMessage(Message message){
+        try {
+            ForwardTask ft = (ForwardTask) message.getObjectProperty("ForwardTask");
+            //TODO
+        } catch (Exception e) {
+            throw new EJBException(e.getMessage(), e);
+        }
+    }
 
 }

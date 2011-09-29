@@ -44,9 +44,9 @@ import java.util.List;
 
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
-import javax.ejb.Schedule;
 import javax.ejb.Stateless;
-import javax.ejb.Timeout;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -104,6 +104,7 @@ public class FileCacheManagerBean implements FileCacheManager {
     }
 
     @Override
+    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
     public void fileUpdateTimer() {
         try{
             Calendar interval = Calendar.getInstance();

@@ -40,10 +40,16 @@ package org.dcm4chee.proxy.ejb;
 
 import java.util.List;
 
+import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Queue;
+import javax.jms.QueueConnection;
+import javax.jms.QueueConnectionFactory;
+import javax.jms.QueueSender;
+import javax.jms.QueueSession;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -56,6 +62,12 @@ import org.dcm4chee.proxy.persistence.ForwardTask;
  */
 @Stateless
 public class ForwardTaskManagerBean implements ForwardTaskManager {
+    
+    @Resource(mappedName="jms/StoreSCU")
+    private QueueConnectionFactory qconFactory;
+    
+    @Resource(mappedName="jms/StoreSCU")
+    private Queue queue;
     
     @EJB
     private FileCacheManager fcMgr;
@@ -72,21 +84,38 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     }
 
     @Override
-    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-    public void scheduleForwardTask(String seriesIUID) {
+    public void scheduleForwardTask(String seriesIUID) throws JMSException {
         List<String> sourceAETs = fcMgr.findSourceAETsOfSeries(seriesIUID);
         for (String aet : sourceAETs){
             String fsUID = UIDUtils.createUID();
             fcMgr.setFilesetUID(fsUID, seriesIUID, aet);
             String[] targetAETs = aeProperties.getTargetAETs(aet);
             for (String targetAET : targetAETs) {
-                ForwardTask ft = new ForwardTask();
-                ft.setFilesetUID(fsUID);
-                ft.setFilesetStatus(ft.SCHEDULED);
-                ft.setTargetAET(targetAET);
-                persist(ft);
+                ForwardTask ft = storeForwardTask(fsUID, targetAET);
+                sendStoreSCPMessage(ft);
+                
             }
         }
-        //TODO: schedule send task
+    }
+
+    private void sendStoreSCPMessage(ForwardTask ft) throws JMSException {
+        QueueConnection qcon = qconFactory.createQueueConnection();
+        QueueSession qsession = qcon.createQueueSession(false, 0);
+        QueueSender qsender = qsession.createSender(queue);
+        Message message = qsession.createMessage();
+        message.setObjectProperty("ForwardTask", ft);
+        qsender.send(message);
+        qsender.close();
+        qsession.close();
+        qcon.close();
+    }
+
+    private ForwardTask storeForwardTask(String fsUID, String targetAET) {
+        ForwardTask ft = new ForwardTask();
+        ft.setFilesetUID(fsUID);
+        ft.setFilesetStatus(ft.SCHEDULED);
+        ft.setTargetAET(targetAET);
+        persist(ft);
+        return ft;
     }
 }
