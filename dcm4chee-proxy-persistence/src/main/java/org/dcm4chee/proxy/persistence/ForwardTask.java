@@ -38,6 +38,8 @@
 
 package org.dcm4chee.proxy.persistence;
 
+import java.io.Serializable;
+
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -53,12 +55,14 @@ import javax.persistence.Table;
 @NamedQueries({
     @NamedQuery(
             name = "ForwadTask.findPK",
-            query = "Select f.pk from ForwardTask f where f.filesetUID = ?1"
+            query = "SELECT f.pk FROM ForwardTask f WHERE f.filesetUID = ?1 "
                   + "AND f.targetAET = ?2")
 })
 @Entity
 @Table(name = "forward_task")
-public class ForwardTask {
+public class ForwardTask implements Serializable{
+    
+    private static final long serialVersionUID = 5400645502128519891L;
     
     public final String SCHEDULED = "scheduled";
     public final String COMPLETED = "completed";

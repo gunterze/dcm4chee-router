@@ -36,30 +36,37 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.proxy.jms;
+package org.dcm4chee.proxy.ejb;
 
-import javax.ejb.ActivationConfigProperty;
-import javax.ejb.MessageDriven;
-import javax.jms.Message;
-import javax.jms.MessageListener;
+import java.io.IOException;
+import java.util.Properties;
 
+import javax.ejb.Singleton;
+
+import org.dcm4che.tool.common.CLIUtils;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  * 
  */
-@MessageDriven(mappedName="StoreSCU", activationConfig={
-        @ActivationConfigProperty(
-                propertyName="destination",
-                propertyValue="queue/StoreSCU"),
-        @ActivationConfigProperty(
-                propertyName="destinationType",
-                propertyValue="javax.jms.Queue")})
-public class StoreSCUListener implements MessageListener{
+@Singleton
+public class AePropertiesBean implements AeProperties {
+    
+    private Properties aeConfig;
 
-    @Override
-    public void onMessage(Message message) {
-        // TODO Auto-generated method stub
-        
+    AePropertiesBean() throws IOException {
+        try {
+            aeConfig = CLIUtils.loadProperties("resource:ae.properties", null);
+        } catch (IOException e) {
+            throw new IOException(e.getMessage(), e.getCause());
+        }
+    }
+    
+    /* (non-Javadoc)
+     * @see org.dcm4chee.proxy.ejb.AeProperties#getTargetAETs(java.lang.String)
+     */
+    public String[] getTargetAETs(String sourceAET) {
+        String targetAETs = aeConfig.getProperty(sourceAET);
+        return targetAETs.split("\\");
     }
 }

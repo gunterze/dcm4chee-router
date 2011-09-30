@@ -44,7 +44,7 @@ import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.jms.JMSException;
-import javax.jms.Message;
+import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
@@ -63,10 +63,10 @@ import org.dcm4chee.proxy.persistence.ForwardTask;
 @Stateless
 public class ForwardTaskManagerBean implements ForwardTaskManager {
     
-    @Resource(mappedName="jms/StoreSCU")
+    @Resource(mappedName="java:/JmsXA")
     private QueueConnectionFactory qconFactory;
     
-    @Resource(mappedName="jms/StoreSCU")
+    @Resource(mappedName="queue/StoreSCU")
     private Queue queue;
     
     @EJB
@@ -102,8 +102,7 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
         QueueConnection qcon = qconFactory.createQueueConnection();
         QueueSession qsession = qcon.createQueueSession(false, 0);
         QueueSender qsender = qsession.createSender(queue);
-        Message message = qsession.createMessage();
-        message.setObjectProperty("ForwardTask", ft);
+        ObjectMessage message = qsession.createObjectMessage(ft);
         qsender.send(message);
         qsender.close();
         qsession.close();

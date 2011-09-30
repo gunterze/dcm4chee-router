@@ -108,7 +108,7 @@ public class FileCacheManagerBean implements FileCacheManager {
     public void fileUpdateTimer() {
         try{
             Calendar interval = Calendar.getInstance();
-            interval.add(Calendar.MINUTE, -5);
+            interval.add(Calendar.MINUTE, -1);
             List<String> newSeriesList = findSeriesReceivedBefore(interval.getTime());
             for (String seriesIUID : newSeriesList){
                 forwardTaskMgr.scheduleForwardTask(seriesIUID);
