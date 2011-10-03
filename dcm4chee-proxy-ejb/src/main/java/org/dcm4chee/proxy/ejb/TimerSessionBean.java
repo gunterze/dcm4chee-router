@@ -44,7 +44,6 @@ import java.util.List;
 import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
-import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import javax.ejb.TimerService;
 
@@ -69,8 +68,6 @@ public class TimerSessionBean {
     private static final Logger LOG =
             LoggerFactory.getLogger(TimerSessionBean.class);
 
-
-    @Schedule(second="*/30", minute = "*", hour = "*", persistent=false)
     public void automaticTimeout() {
         LOG.info("Automatic timeout occured");
         try{
