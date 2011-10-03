@@ -10,7 +10,8 @@ http://java.sun.com/xml/ns/javaee/ejb-jar_3_1.xsd"
       <session-type>Stateless</session-type>
       <timer>
         <schedule>
-          <minute>*/1</minute>
+          <second>*/10</second>
+          <minute>*</minute>
           <hour>*</hour>
         </schedule>
         <timeout-method>

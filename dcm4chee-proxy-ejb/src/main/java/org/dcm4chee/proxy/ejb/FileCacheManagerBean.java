@@ -41,7 +41,6 @@ package org.dcm4chee.proxy.ejb;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Timer;
 
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
