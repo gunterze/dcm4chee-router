@@ -56,6 +56,7 @@ import javax.persistence.PersistenceContext;
 
 import org.dcm4che.util.UIDUtils;
 import org.dcm4chee.proxy.persistence.ForwardTask;
+import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
@@ -113,7 +114,7 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     private ForwardTask storeForwardTask(String fsUID, String targetAET) {
         ForwardTask ft = new ForwardTask();
         ft.setFilesetUID(fsUID);
-        ft.setFilesetStatus(ForwardTask.Status.SCHEDULED.toString());
+        ft.setFilesetStatus(ForwardTaskStatus.Status.SCHEDULED);
         ft.setTargetAET(targetAET);
         ft.setStatusCode("-");
         persist(ft);

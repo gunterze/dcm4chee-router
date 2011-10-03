@@ -43,6 +43,9 @@ import javax.ejb.MessageDriven;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
@@ -56,10 +59,12 @@ import javax.jms.MessageListener;
                 propertyName="destinationType",
                 propertyValue="javax.jms.Queue")})
 public class StoreSCUListener implements MessageListener{
+    
+    private static final Logger LOG = LoggerFactory.getLogger(StoreSCUListener.class);
 
     @Override
     public void onMessage(Message message) {
-        // TODO Auto-generated method stub
-        
+        // TODO
+        LOG.info("received message: "+message.toString());
     }
 }

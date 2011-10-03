@@ -49,6 +49,8 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import org.dcm4chee.proxy.persistence.ForwardTaskStatus.Status;
+
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
@@ -61,12 +63,6 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "forward_task")
 public class ForwardTask implements Serializable{
-    
-    public static enum Status {
-        SCHEDULED ,
-        COMPLETED ,
-        ERROR
-    }
     
     private static final long serialVersionUID = 5400645502128519891L;
     
@@ -83,7 +79,7 @@ public class ForwardTask implements Serializable{
     
     @Basic(optional = false)
     @Column(name= "fileset_status")
-    private String filesetStatus;
+    private Status filesetStatus;
     
     @Basic(optional = false)
     @Column(name = "status_code")
@@ -109,11 +105,11 @@ public class ForwardTask implements Serializable{
         return filesetUID;
     }
 
-    public void setFilesetStatus(String scheduled) {
+    public void setFilesetStatus(Status scheduled) {
         this.filesetStatus = scheduled;
     }
 
-    public String getFilesetStatus() {
+    public Status getFilesetStatus() {
         return filesetStatus;
     }
 
