@@ -38,12 +38,9 @@
 
 package org.dcm4chee.proxy.ejb;
 
-import java.io.IOException;
-import java.util.Properties;
+import java.util.ArrayList;
 
 import javax.ejb.Singleton;
-
-import org.dcm4che.tool.common.CLIUtils;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
@@ -52,21 +49,9 @@ import org.dcm4che.tool.common.CLIUtils;
 @Singleton
 public class AePropertiesBean implements AeProperties {
     
-    private Properties aeConfig;
-
-    AePropertiesBean() throws IOException {
-        try {
-            aeConfig = CLIUtils.loadProperties("resource:ae.properties", null);
-        } catch (IOException e) {
-            throw new IOException(e.getMessage(), e.getCause());
-        }
-    }
-    
-    /* (non-Javadoc)
-     * @see org.dcm4chee.proxy.ejb.AeProperties#getTargetAETs(java.lang.String)
-     */
-    public String[] getTargetAETs(String sourceAET) {
-        String targetAETs = aeConfig.getProperty(sourceAET);
-        return targetAETs.split("\\");
+    public ArrayList<String> getTargetAETs(String sourceAET) {
+        ArrayList<String> aets = new ArrayList<String>();
+        aets.add("DCM4CHEE-PROXY@localhost:11112");
+        return aets;
     }
 }

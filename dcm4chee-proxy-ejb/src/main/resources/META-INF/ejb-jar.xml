@@ -10,12 +10,13 @@ http://java.sun.com/xml/ns/javaee/ejb-jar_3_1.xsd"
       <session-type>Stateless</session-type>
       <timer>
         <schedule>
-          <minute>*/5</minute>
+          <minute>*/1</minute>
           <hour>*</hour>
         </schedule>
         <timeout-method>
           <method-name>fileUpdateTimer</method-name>
         </timeout-method>
+        <persistent>false</persistent>
       </timer>
     </session>
   </enterprise-beans>

@@ -38,6 +38,7 @@
 
 package org.dcm4chee.proxy.ejb;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -89,7 +90,7 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
         for (String aet : sourceAETs){
             String fsUID = UIDUtils.createUID();
             fcMgr.setFilesetUID(fsUID, seriesIUID, aet);
-            String[] targetAETs = aeProperties.getTargetAETs(aet);
+            ArrayList<String> targetAETs = aeProperties.getTargetAETs(aet);
             for (String targetAET : targetAETs) {
                 ForwardTask ft = storeForwardTask(fsUID, targetAET);
                 sendStoreSCPMessage(ft);
@@ -112,8 +113,9 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     private ForwardTask storeForwardTask(String fsUID, String targetAET) {
         ForwardTask ft = new ForwardTask();
         ft.setFilesetUID(fsUID);
-        ft.setFilesetStatus(ft.SCHEDULED);
+        ft.setFilesetStatus(ForwardTask.Status.SCHEDULED.toString());
         ft.setTargetAET(targetAET);
+        ft.setStatusCode("-");
         persist(ft);
         return ft;
     }

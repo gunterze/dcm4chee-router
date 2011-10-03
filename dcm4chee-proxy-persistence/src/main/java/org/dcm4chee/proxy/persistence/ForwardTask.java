@@ -62,11 +62,13 @@ import javax.persistence.Table;
 @Table(name = "forward_task")
 public class ForwardTask implements Serializable{
     
-    private static final long serialVersionUID = 5400645502128519891L;
+    public static enum Status {
+        SCHEDULED ,
+        COMPLETED ,
+        ERROR
+    }
     
-    public final String SCHEDULED = "scheduled";
-    public final String COMPLETED = "completed";
-    public final String ERROR = "error";
+    private static final long serialVersionUID = 5400645502128519891L;
     
     public static final String FIND_PK = "ForwadTask.findPK";
     
@@ -83,7 +85,7 @@ public class ForwardTask implements Serializable{
     @Column(name= "fileset_status")
     private String filesetStatus;
     
-    @Basic(optional = true)
+    @Basic(optional = false)
     @Column(name = "status_code")
     private String statusCode;
     
@@ -107,8 +109,8 @@ public class ForwardTask implements Serializable{
         return filesetUID;
     }
 
-    public void setFilesetStatus(String filesetStatus) {
-        this.filesetStatus = filesetStatus;
+    public void setFilesetStatus(String scheduled) {
+        this.filesetStatus = scheduled;
     }
 
     public String getFilesetStatus() {
