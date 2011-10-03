@@ -50,6 +50,7 @@ import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import org.dcm4che.net.Device;
 import org.dcm4chee.proxy.persistence.FileCache;
 
 /**
@@ -64,7 +65,7 @@ public class FileCacheManagerBean implements FileCacheManager {
 
     @EJB
     private ForwardTaskManager forwardTaskMgr;
-    
+
     @Override
     public void persist(FileCache fileCache) {
         em.persist(fileCache);
@@ -116,6 +117,21 @@ public class FileCacheManagerBean implements FileCacheManager {
         } catch (Exception e) {
             throw new EJBException(e);
         }
+    }
+
+    // Used by JBoss MC Bean InitDeviceHolder (workaround to limitation of JBoss
+    // Singleton deployer, which does not register supply of jndi:DeviceHolder
+    @EJB
+    private DeviceHolder deviceHolder;
+
+    @Override
+    public Device getDevice() {
+        return deviceHolder.getDevice();
+    }
+
+    @Override
+    public void setDevice(Device device) {
+        deviceHolder.setDevice(device);
     }
 
 }

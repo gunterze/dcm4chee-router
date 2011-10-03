@@ -38,34 +38,19 @@
 
 package org.dcm4chee.proxy.ejb;
 
-import java.util.Date;
-import java.util.List;
-
 import javax.ejb.Local;
 
 import org.dcm4che.net.Device;
-import org.dcm4chee.proxy.persistence.FileCache;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- * @author Michael Backhaus <michael.backhaus@agfa.com>
+ *
  */
 @Local
-public interface FileCacheManager {
+public interface DeviceHolder {
 
-    void persist(FileCache fileCache);
-
-    List<String> findSeriesReceivedBefore(Date before);
-
-    List<String> findSourceAETsOfSeries(String seriesIUID);
-
-    int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
-
-    List<FileCache> findByFilesetUID(String fsUID);
-
-    void fileUpdateTimer();
+    void setDevice(Device device);
 
     Device getDevice();
 
-    void setDevice(Device device);
 }

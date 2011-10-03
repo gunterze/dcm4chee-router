@@ -66,6 +66,7 @@
     <start method="activate" />
     <stop method="deactivate" />
     <demand>jndi:FileCacheManagerBean</demand>
+    <demand>jndi:ForwardTaskManagerBean</demand>
     <install method="setProperty">
       <parameter>dcm4chee.proxy.cache.path</parameter>
       <parameter>${jboss.server.data.dir}</parameter>
@@ -100,6 +101,20 @@
   <!-- Service Registry -->
   <bean name="DicomServiceRegistry" class="org.dcm4che.net.service.DicomServiceRegistry">
     <incallback method="addDicomService" />
+  </bean>
+
+  <!-- InitDeviceHolder -->
+  <bean name="InitDeviceHolder" class="org.dcm4chee.proxy.beans.util.InitDeviceHolder" access-mode="ALL">
+    <install method="setDevice">
+      <parameter><inject bean="Device" /></parameter>
+    </install>
+  </bean>
+
+  <!-- ForwardTaskListener -->
+  <bean name="ForwardTaskListener" class="org.dcm4chee.proxy.beans.forward.ForwardTaskListener">
+    <property name="device"><inject bean="Device" /></property>
+    <start method="start" />
+    <stop method="stop" />
   </bean>
 
 </deployment>

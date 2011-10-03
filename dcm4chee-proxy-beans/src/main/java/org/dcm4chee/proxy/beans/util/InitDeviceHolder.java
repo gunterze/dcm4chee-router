@@ -36,36 +36,27 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.proxy.ejb;
+package org.dcm4chee.proxy.beans.util;
 
-import java.util.Date;
-import java.util.List;
-
-import javax.ejb.Local;
+import javax.ejb.EJB;
 
 import org.dcm4che.net.Device;
-import org.dcm4chee.proxy.persistence.FileCache;
+import org.dcm4chee.proxy.ejb.FileCacheManager;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- * @author Michael Backhaus <michael.backhaus@agfa.com>
+ *
  */
-@Local
-public interface FileCacheManager {
+public class InitDeviceHolder {
 
-    void persist(FileCache fileCache);
+    @EJB
+    private FileCacheManager deviceHolder;
 
-    List<String> findSeriesReceivedBefore(Date before);
+    public Device getDevice(Device device) {
+        return deviceHolder.getDevice();
+    }
 
-    List<String> findSourceAETsOfSeries(String seriesIUID);
-
-    int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
-
-    List<FileCache> findByFilesetUID(String fsUID);
-
-    void fileUpdateTimer();
-
-    Device getDevice();
-
-    void setDevice(Device device);
+    public void setDevice(Device device) {
+        deviceHolder.setDevice(device);
+    }
 }
