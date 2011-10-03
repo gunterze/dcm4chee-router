@@ -79,9 +79,9 @@ public class ForwardTask implements Serializable{
     @Column(name= "fileset_status")
     private ForwardTaskStatus filesetStatus;
     
-    @Basic(optional = false)
-    @Column(name = "status_code")
-    private String statusCode;
+    @Basic(optional = true)
+    @Column(name = "error_code")
+    private String errorCode;
     
     @Basic(optional = false)
     @Column(name = "target_aet")
@@ -103,20 +103,20 @@ public class ForwardTask implements Serializable{
         return filesetUID;
     }
 
-    public void setFilesetStatus(ForwardTaskStatus scheduled) {
-        this.filesetStatus = scheduled;
+    public void setFilesetStatus(ForwardTaskStatus status) {
+        this.filesetStatus = status;
     }
 
     public ForwardTaskStatus getFilesetStatus() {
         return filesetStatus;
     }
 
-    public void setStatusCode(String statusCode) {
-        this.statusCode = statusCode;
+    public void setErrorCode(String code) {
+        this.errorCode = code;
     }
 
-    public String getStatusCode() {
-        return statusCode;
+    public String getErrorCode() {
+        return errorCode;
     }
 
     public void setTargetAET(String targetAET) {

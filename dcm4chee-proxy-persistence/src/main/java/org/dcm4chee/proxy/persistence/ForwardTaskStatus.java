@@ -45,6 +45,6 @@ public enum ForwardTaskStatus {
     
     SCHEDULED,
     COMPLETE,
-    ERROR;
+    ERROR
     
 }

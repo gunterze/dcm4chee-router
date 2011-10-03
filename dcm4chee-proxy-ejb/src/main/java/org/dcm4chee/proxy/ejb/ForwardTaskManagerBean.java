@@ -116,7 +116,7 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
         ft.setFilesetUID(fsUID);
         ft.setFilesetStatus(ForwardTaskStatus.SCHEDULED);
         ft.setTargetAET(targetAET);
-        ft.setStatusCode("-");
+        ft.setErrorCode("-");
         persist(ft);
         return ft;
     }

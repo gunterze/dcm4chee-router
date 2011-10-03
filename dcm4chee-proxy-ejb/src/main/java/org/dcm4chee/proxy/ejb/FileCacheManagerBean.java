@@ -38,15 +38,11 @@
 
 package org.dcm4chee.proxy.ejb;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
 import javax.ejb.EJB;
-import javax.ejb.EJBException;
 import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -62,9 +58,6 @@ public class FileCacheManagerBean implements FileCacheManager {
 
     @PersistenceContext(unitName = "dcm4chee-proxy")
     private EntityManager em;
-
-    @EJB
-    private ForwardTaskManager forwardTaskMgr;
 
     @Override
     public void persist(FileCache fileCache) {
@@ -102,21 +95,6 @@ public class FileCacheManagerBean implements FileCacheManager {
             .setParameter(3, seriesIUID)
             .setParameter(4, sourceAET)
             .executeUpdate();
-    }
-
-    @Override
-    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-    public void fileUpdateTimer() {
-        try{
-            Calendar interval = Calendar.getInstance();
-            interval.add(Calendar.MINUTE, -1);
-            List<String> newSeriesList = findSeriesReceivedBefore(interval.getTime());
-            for (String seriesIUID : newSeriesList){
-                forwardTaskMgr.scheduleForwardTask(seriesIUID);
-            }
-        } catch (Exception e) {
-            throw new EJBException(e);
-        }
     }
 
     // Used by JBoss MC Bean InitDeviceHolder (workaround to limitation of JBoss
