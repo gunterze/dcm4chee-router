@@ -4,9 +4,9 @@
   version="3.1">
   <enterprise-beans>
     <session>
-      <ejb-name>TimerSessionBean</ejb-name>
-      <ejb-class>org.dcm4chee.proxy.ejb.TimerSessionBean</ejb-class>
-      <session-type>Singleton</session-type>
+      <ejb-name>FileCacheManagerBean</ejb-name>
+      <ejb-class>org.dcm4chee.proxy.ejb.FileCacheManagerBean</ejb-class>
+      <session-type>Stateless</session-type>
       <timer>
         <schedule>
           <second>*/30</second>
@@ -14,7 +14,7 @@
           <hour>*</hour>
         </schedule>
         <timeout-method>
-          <method-name>automaticTimeout</method-name>
+          <method-name>updateFileCacheManagerTimeout</method-name>
         </timeout-method>
         <persistent>false</persistent>
       </timer>

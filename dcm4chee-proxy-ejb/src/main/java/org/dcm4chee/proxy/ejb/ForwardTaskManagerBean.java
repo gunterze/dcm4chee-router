@@ -68,18 +68,18 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     @Resource(mappedName="java:/JmsXA")
     private QueueConnectionFactory qconFactory;
     
-    @Resource(mappedName="queue/StoreSCU")
+    @Resource(mappedName="queue/ForwardTaskQueue")
     private Queue queue;
     
     @EJB
-    private FileCacheManager fcMgr;
+    private FileCacheManager fileCacheMgr;
     
     @EJB
     private AeProperties aeProperties;
     
     @PersistenceContext(unitName = "dcm4chee-proxy")
     private EntityManager em;
-
+    
     @Override
     public void persist(ForwardTask forwardTask) {
         em.persist(forwardTask);
@@ -87,10 +87,10 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
 
     @Override
     public void scheduleForwardTask(String seriesIUID) throws JMSException {
-        List<String> sourceAETs = fcMgr.findSourceAETsOfSeries(seriesIUID);
+        List<String> sourceAETs = fileCacheMgr.findSourceAETsOfSeries(seriesIUID);
         for (String aet : sourceAETs){
             String fsUID = UIDUtils.createUID();
-            fcMgr.setFilesetUID(fsUID, seriesIUID, aet);
+            fileCacheMgr.setFilesetUID(fsUID, seriesIUID, aet);
             ArrayList<String> targetAETs = aeProperties.getTargetAETs(aet);
             for (String targetAET : targetAETs) {
                 ForwardTask ft = storeForwardTask(fsUID, targetAET);
@@ -99,6 +99,7 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
             }
         }
     }
+    
 
     private void sendStoreSCPMessage(ForwardTask ft) throws JMSException {
         QueueConnection qcon = qconFactory.createQueueConnection();

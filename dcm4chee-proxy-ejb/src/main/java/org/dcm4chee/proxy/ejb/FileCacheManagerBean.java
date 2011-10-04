@@ -38,16 +38,25 @@
 
 package org.dcm4chee.proxy.ejb;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import javax.annotation.Resource;
 import javax.ejb.EJB;
+import javax.ejb.EJBException;
 import javax.ejb.Stateless;
+import javax.ejb.Timeout;
+import javax.ejb.Timer;
+import javax.ejb.TimerService;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import org.dcm4che.net.Device;
 import org.dcm4chee.proxy.persistence.FileCache;
+import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -55,6 +64,15 @@ import org.dcm4chee.proxy.persistence.FileCache;
  */
 @Stateless
 public class FileCacheManagerBean implements FileCacheManager {
+    
+    private static final Logger LOG =
+        LoggerFactory.getLogger(ForwardTaskStatus.class);
+    
+    @Resource
+    TimerService timerService;
+    
+    @EJB
+    private ForwardTaskManagerBean forwardTaskMgr;
 
     @PersistenceContext(unitName = "dcm4chee-proxy")
     private EntityManager em;
@@ -96,7 +114,29 @@ public class FileCacheManagerBean implements FileCacheManager {
             .setParameter(4, sourceAET)
             .executeUpdate();
     }
+    
+    public void setTimer(long intervalDuration) {
+        LOG.info("Setting a programmatic timeout for " + intervalDuration
+                + " milliseconds from now.");
+        Timer timer =
+                timerService.createTimer(intervalDuration, "Created new programmatic timer");
+    }
 
+    @Timeout
+    public void updateFileCacheManagerTimeout() {
+        LOG.info("FileCacheManager timeout occured");
+        try{
+            Calendar interval = Calendar.getInstance();
+            interval.add(Calendar.MINUTE, -1);
+            List<String> newSeriesList = findSeriesReceivedBefore(interval.getTime());
+            for (String seriesIUID : newSeriesList){
+                forwardTaskMgr.scheduleForwardTask(seriesIUID);
+            }
+        } catch (Exception e) {
+            throw new EJBException(e);
+        }
+    }
+    
     // Used by JBoss MC Bean InitDeviceHolder (workaround to limitation of JBoss
     // Singleton deployer, which does not register supply of jndi:DeviceHolder
     @EJB
