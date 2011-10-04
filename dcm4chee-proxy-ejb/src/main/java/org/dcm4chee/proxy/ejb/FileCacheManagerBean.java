@@ -52,7 +52,6 @@ import javax.ejb.TimerService;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import org.dcm4che.net.Device;
 import org.dcm4chee.proxy.persistence.FileCache;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 import org.slf4j.Logger;
@@ -136,20 +135,4 @@ public class FileCacheManagerBean implements FileCacheManager {
             throw new EJBException(e);
         }
     }
-    
-    // Used by JBoss MC Bean InitDeviceHolder (workaround to limitation of JBoss
-    // Singleton deployer, which does not register supply of jndi:DeviceHolder
-    @EJB
-    private DeviceHolder deviceHolder;
-
-    @Override
-    public Device getDevice() {
-        return deviceHolder.getDevice();
-    }
-
-    @Override
-    public void setDevice(Device device) {
-        deviceHolder.setDevice(device);
-    }
-
 }

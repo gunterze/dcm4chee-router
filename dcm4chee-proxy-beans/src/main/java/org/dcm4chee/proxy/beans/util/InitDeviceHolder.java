@@ -41,7 +41,7 @@ package org.dcm4chee.proxy.beans.util;
 import javax.ejb.EJB;
 
 import org.dcm4che.net.Device;
-import org.dcm4chee.proxy.ejb.FileCacheManager;
+import org.dcm4chee.proxy.ejb.DeviceHolder;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -50,7 +50,7 @@ import org.dcm4chee.proxy.ejb.FileCacheManager;
 public class InitDeviceHolder {
 
     @EJB
-    private FileCacheManager deviceHolder;
+    private DeviceHolder deviceHolder;
 
     public Device getDevice(Device device) {
         return deviceHolder.getDevice();
