@@ -107,7 +107,9 @@
 
   <!-- InitDeviceHolder -->
   <bean name="InitDeviceHolder" class="org.dcm4chee.proxy.beans.util.InitDeviceHolder" access-mode="ALL">
-    <property name="device"><inject bean="Device" /></property>
+    <install method="init">
+      <parameter><inject bean="Device" /></parameter>
+    </install>
   </bean>
 
   <!-- ForwardTaskListener -->

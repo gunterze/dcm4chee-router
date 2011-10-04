@@ -52,11 +52,7 @@ public class InitDeviceHolder {
     @EJB
     private DeviceHolder deviceHolder;
 
-    public Device getDevice(Device device) {
-        return deviceHolder.getDevice();
-    }
-
-    public void setDevice(Device device) {
+    public void init(Device device) {
         deviceHolder.setDevice(device);
     }
 }
