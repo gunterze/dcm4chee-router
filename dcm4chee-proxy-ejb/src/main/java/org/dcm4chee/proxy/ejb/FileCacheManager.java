@@ -43,7 +43,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.dcm4che.net.Device;
 import org.dcm4chee.proxy.persistence.FileCache;
 
 /**
@@ -62,8 +61,4 @@ public interface FileCacheManager {
     int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
 
     List<FileCache> findByFilesetUID(String fsUID);
-
-    Device getDevice();
-
-    void setDevice(Device device);
 }

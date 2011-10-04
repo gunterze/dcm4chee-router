@@ -65,8 +65,10 @@
     </property>
     <start method="activate" />
     <stop method="deactivate" />
-    <demand>jndi:FileCacheManagerBean</demand>
-    <demand>jndi:ForwardTaskManagerBean</demand>
+    <demand>Class:org.dcm4chee.proxy.ejb.FileCacheManager</demand>
+    <demand>Class:org.dcm4chee.proxy.ejb.ForwardTaskManager</demand>
+    <demand>Class:org.dcm4chee.proxy.ejb.DeviceHolder</demand>
+    <demand>HornetQServer</demand>
     <install method="setProperty">
       <parameter>dcm4chee.proxy.cache.path</parameter>
       <parameter>${jboss.server.data.dir}</parameter>
@@ -105,9 +107,7 @@
 
   <!-- InitDeviceHolder -->
   <bean name="InitDeviceHolder" class="org.dcm4chee.proxy.beans.util.InitDeviceHolder" access-mode="ALL">
-    <install method="setDevice">
-      <parameter><inject bean="Device" /></parameter>
-    </install>
+    <property name="device"><inject bean="Device" /></property>
   </bean>
 
   <!-- ForwardTaskListener -->

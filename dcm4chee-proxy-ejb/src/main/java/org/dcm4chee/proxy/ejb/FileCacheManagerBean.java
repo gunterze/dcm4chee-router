@@ -41,12 +41,10 @@ package org.dcm4chee.proxy.ejb;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import org.dcm4che.net.Device;
 import org.dcm4chee.proxy.persistence.FileCache;
 
 /**
@@ -96,20 +94,4 @@ public class FileCacheManagerBean implements FileCacheManager {
             .setParameter(4, sourceAET)
             .executeUpdate();
     }
-
-    // Used by JBoss MC Bean InitDeviceHolder (workaround to limitation of JBoss
-    // Singleton deployer, which does not register supply of jndi:DeviceHolder
-    @EJB
-    private DeviceHolder deviceHolder;
-
-    @Override
-    public Device getDevice() {
-        return deviceHolder.getDevice();
-    }
-
-    @Override
-    public void setDevice(Device device) {
-        deviceHolder.setDevice(device);
-    }
-
 }
