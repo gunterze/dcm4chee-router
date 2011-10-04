@@ -49,6 +49,8 @@ import javax.ejb.Stateless;
 import javax.ejb.Timeout;
 import javax.ejb.Timer;
 import javax.ejb.TimerService;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
@@ -67,11 +69,11 @@ public class FileCacheManagerBean implements FileCacheManager {
     private static final Logger LOG =
         LoggerFactory.getLogger(ForwardTaskStatus.class);
     
+//    @EJB
+//    private ForwardTaskManagerBean forwardTaskMgr;
+    
     @Resource
     TimerService timerService;
-    
-    @EJB
-    private ForwardTaskManagerBean forwardTaskMgr;
 
     @PersistenceContext(unitName = "dcm4chee-proxy")
     private EntityManager em;
@@ -104,16 +106,6 @@ public class FileCacheManagerBean implements FileCacheManager {
             .getResultList();
     }
 
-    @Override
-    public int setFilesetUID(String fsUID, String seriesIUID, String sourceAET) {
-        return em.createNamedQuery(FileCache.UPDATE_FILESET_UID)
-            .setParameter(1, fsUID)
-            .setParameter(2, FileCache.NO_FILESET_UID)
-            .setParameter(3, seriesIUID)
-            .setParameter(4, sourceAET)
-            .executeUpdate();
-    }
-    
     public void setTimer(long intervalDuration) {
         LOG.info("Setting a programmatic timeout for " + intervalDuration
                 + " milliseconds from now.");
@@ -122,6 +114,7 @@ public class FileCacheManagerBean implements FileCacheManager {
     }
 
     @Timeout
+    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
     public void updateFileCacheManagerTimeout() {
         LOG.info("FileCacheManager timeout occured");
         try{
@@ -129,7 +122,8 @@ public class FileCacheManagerBean implements FileCacheManager {
             interval.add(Calendar.MINUTE, -1);
             List<String> newSeriesList = findSeriesReceivedBefore(interval.getTime());
             for (String seriesIUID : newSeriesList){
-                forwardTaskMgr.scheduleForwardTask(seriesIUID);
+                List<String> sourceAETs = findSourceAETsOfSeries(seriesIUID);
+//                forwardTaskMgr.scheduleForwardTask(seriesIUID, sourceAETs);
             }
         } catch (Exception e) {
             throw new EJBException(e);

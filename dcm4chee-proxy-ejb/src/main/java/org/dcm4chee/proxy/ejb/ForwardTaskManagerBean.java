@@ -55,6 +55,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import org.dcm4che.util.UIDUtils;
+import org.dcm4chee.proxy.persistence.FileCache;
 import org.dcm4chee.proxy.persistence.ForwardTask;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 
@@ -72,9 +73,6 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     private Queue queue;
     
     @EJB
-    private FileCacheManager fileCacheMgr;
-    
-    @EJB
     private AeProperties aeProperties;
     
     @PersistenceContext(unitName = "dcm4chee-proxy")
@@ -84,13 +82,22 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     public void persist(ForwardTask forwardTask) {
         em.persist(forwardTask);
     }
+    
+    @Override
+    public int setFilesetUID(String fsUID, String seriesIUID, String sourceAET) {
+        return em.createNamedQuery(FileCache.UPDATE_FILESET_UID)
+            .setParameter(1, fsUID)
+            .setParameter(2, FileCache.NO_FILESET_UID)
+            .setParameter(3, seriesIUID)
+            .setParameter(4, sourceAET)
+            .executeUpdate();
+    }
 
     @Override
-    public void scheduleForwardTask(String seriesIUID) throws JMSException {
-        List<String> sourceAETs = fileCacheMgr.findSourceAETsOfSeries(seriesIUID);
+    public void scheduleForwardTask(String seriesIUID, List<String> sourceAETs) throws JMSException {
         for (String aet : sourceAETs){
             String fsUID = UIDUtils.createUID();
-            fileCacheMgr.setFilesetUID(fsUID, seriesIUID, aet);
+            setFilesetUID(fsUID, seriesIUID, aet);
             ArrayList<String> targetAETs = aeProperties.getTargetAETs(aet);
             for (String targetAET : targetAETs) {
                 ForwardTask ft = storeForwardTask(fsUID, targetAET);

@@ -84,7 +84,7 @@ public class ForwardTaskListener implements MessageListener {
             InitialContext ctx = new InitialContext();
             try {
                 qconFactory = (QueueConnectionFactory) ctx.lookup("ConnectionFactory");
-                queue = (Queue) ctx.lookup("queue/StoreSCU");
+                queue = (Queue) ctx.lookup("queue/ForwardTaskQueue");
             } finally {
                 ctx.close();
             }

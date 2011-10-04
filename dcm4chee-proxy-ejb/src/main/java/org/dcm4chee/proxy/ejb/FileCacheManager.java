@@ -58,7 +58,5 @@ public interface FileCacheManager {
 
     List<String> findSourceAETsOfSeries(String seriesIUID);
 
-    int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
-
     List<FileCache> findByFilesetUID(String fsUID);
 }
