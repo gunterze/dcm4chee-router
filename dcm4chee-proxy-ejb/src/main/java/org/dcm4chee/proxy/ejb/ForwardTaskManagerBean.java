@@ -43,6 +43,7 @@ import java.util.List;
 
 import javax.annotation.Resource;
 import javax.ejb.EJB;
+import javax.ejb.EJBException;
 import javax.ejb.Stateless;
 import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
@@ -83,7 +84,6 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
         em.persist(forwardTask);
     }
     
-    @Override
     public int setFilesetUID(String fsUID, String seriesIUID, String sourceAET) {
         return em.createNamedQuery(FileCache.UPDATE_FILESET_UID)
             .setParameter(1, fsUID)
@@ -94,14 +94,18 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     }
 
     @Override
-    public void scheduleForwardTask(String seriesIUID, List<String> sourceAETs) throws JMSException {
+    public void scheduleForwardTask(String seriesIUID, List<String> sourceAETs) {
         for (String aet : sourceAETs){
             String fsUID = UIDUtils.createUID();
             setFilesetUID(fsUID, seriesIUID, aet);
             ArrayList<String> targetAETs = aeProperties.getTargetAETs(aet);
             for (String targetAET : targetAETs) {
                 ForwardTask ft = storeForwardTask(fsUID, targetAET);
-                sendStoreSCPMessage(ft);
+                try {
+                    sendStoreSCPMessage(ft);
+                } catch (JMSException e) {
+                    throw new EJBException(e.getMessage());
+                }
                 
             }
         }

@@ -69,8 +69,8 @@ public class FileCacheManagerBean implements FileCacheManager {
     private static final Logger LOG =
         LoggerFactory.getLogger(ForwardTaskStatus.class);
     
-//    @EJB
-//    private ForwardTaskManagerBean forwardTaskMgr;
+    @EJB
+    private ForwardTaskManager forwardTaskMgr;
     
     @Resource
     TimerService timerService;
@@ -123,7 +123,7 @@ public class FileCacheManagerBean implements FileCacheManager {
             List<String> newSeriesList = findSeriesReceivedBefore(interval.getTime());
             for (String seriesIUID : newSeriesList){
                 List<String> sourceAETs = findSourceAETsOfSeries(seriesIUID);
-//                forwardTaskMgr.scheduleForwardTask(seriesIUID, sourceAETs);
+                forwardTaskMgr.scheduleForwardTask(seriesIUID, sourceAETs);
             }
         } catch (Exception e) {
             throw new EJBException(e);

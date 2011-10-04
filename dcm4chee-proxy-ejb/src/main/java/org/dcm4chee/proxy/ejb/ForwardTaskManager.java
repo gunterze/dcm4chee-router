@@ -41,7 +41,6 @@ package org.dcm4chee.proxy.ejb;
 import java.util.List;
 
 import javax.ejb.Local;
-import javax.jms.JMSException;
 
 import org.dcm4chee.proxy.persistence.ForwardTask;
 
@@ -51,11 +50,9 @@ import org.dcm4chee.proxy.persistence.ForwardTask;
  */
 @Local
 public interface ForwardTaskManager {
-    
+
     void persist(ForwardTask forwardTask);
 
-    void scheduleForwardTask(String seriesIUID, List<String> sourceAETs) throws JMSException;
-
-    int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
+    void scheduleForwardTask(String seriesIUID, List<String> sourceAETs);
 
 }
