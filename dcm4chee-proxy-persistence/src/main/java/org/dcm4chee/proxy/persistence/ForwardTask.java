@@ -43,36 +43,28 @@ import java.io.Serializable;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
+import javax.persistence.IdClass;
 import javax.persistence.Table;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
-@NamedQueries({
-    @NamedQuery(
-            name = "ForwadTask.findPK",
-            query = "SELECT f.pk FROM ForwardTask f WHERE f.filesetUID = ?1 "
-                  + "AND f.targetAET = ?2")
-})
 @Entity
 @Table(name = "forward_task")
+@IdClass(ForwardTaskPK.class)
 public class ForwardTask implements Serializable{
     
     private static final long serialVersionUID = 5400645502128519891L;
     
-    public static final String FIND_PK = "ForwadTask.findPK";
+    @Id
+    @Basic(optional = false)
+    @Column(name = "target_aet")
+    private String targetAET;
     
     @Id
-    @GeneratedValue
-    @Column(name = "pk")
-    private int pk;
-    
     @Basic(optional = false)
-    @Column(name = "fileset_uid", unique = true)
+    @Column(name = "fileset_uid")
     private String filesetUID;
     
     @Basic(optional = false)
@@ -82,18 +74,6 @@ public class ForwardTask implements Serializable{
     @Basic(optional = true)
     @Column(name = "error_code")
     private String errorCode;
-    
-    @Basic(optional = false)
-    @Column(name = "target_aet")
-    private String targetAET;
-
-    public void setPk(int pk) {
-        this.pk = pk;
-    }
-
-    public int getPk() {
-        return pk;
-    }
 
     public void setFilesetUID(String filesetUID) {
         this.filesetUID = filesetUID;

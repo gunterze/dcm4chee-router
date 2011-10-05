@@ -73,8 +73,54 @@
       <parameter>dcm4chee.proxy.cache.path</parameter>
       <parameter>${jboss.server.data.dir}</parameter>
     </install>
-    <incallback method="addConnection" />
-    <uncallback method="removeConnection" />
+    <install method="setProperty">
+      <parameter>ForwardRules</parameter>
+      <parameter>
+        <map keyClass="java.lang.String" valueClass="[Ljava.lang.String;">
+          <entry>
+            <key>STORESCU</key>
+            <value>
+              <array>
+                <value>STORESCP</value>
+                <value>STORESCP_TLS</value>
+              </array>
+            </value>
+          </entry>
+        </map>
+      </parameter>
+    </install>
+    <install method="setProperty">
+      <parameter>Retrieve.connections</parameter>
+      <parameter>
+        <map keyClass="java.lang.String" valueClass="org.dcm4che.net.Connection">
+          <entry>
+            <key>STORESCP</key>
+            <value>
+              <bean class="org.dcm4che.net.Connection">
+                <property name="hostname">localhost</property>
+                <property name="port">11113</property>
+              </bean>
+            </value>
+          </entry>
+          <entry>
+            <key>STORESCP_TLS</key>
+            <value>
+              <bean class="org.dcm4che.net.Connection">
+                <property name="hostname">localhost</property>
+                <property name="port">2762</property>
+                <property name="tlsCipherSuite">
+                  <array>
+                    <value>SSL_RSA_WITH_NULL_SHA</value>
+                    <value>TLS_RSA_WITH_AES_128_CBC_SHA</value>
+                    <value>TLS_RSA_WITH_3DES_EDE_CBC_SHA</value>
+                  </array>
+                </property>
+              </bean>
+            </value>
+          </entry>
+        </map>
+      </parameter>
+    </install>
     <incallback method="addApplicationEntity" />
     <uncallback method="removeApplicationEntity" />
   </bean>
@@ -83,6 +129,26 @@
   <!-- The DICOM Connection -->
   <bean name="Connection" class="org.dcm4che.net.Connection">
     <property name="port">11112</property>
+    <install method="addConnection" bean="Device">
+      <parameter>
+        <this/>
+      </parameter>
+    </install>
+    <install method="addConnection" bean="ApplicationEntity">
+      <parameter>
+        <this/>
+      </parameter>
+    </install>
+    <uninstall method="removeConnection" bean="Device">
+      <parameter>
+        <this/>
+      </parameter>
+    </uninstall>
+    <uninstall method="removeConnection" bean="ApplicationEntity">
+      <parameter>
+        <this/>
+      </parameter>
+    </uninstall>
   </bean>
 
   <!-- The DICOM Application Entity -->
@@ -96,7 +162,6 @@
     <property name="dimseRQHandler">
       <inject bean="DicomServiceRegistry" />
     </property>
-    <incallback method="addConnection" />
     <incallback method="addTransferCapability" />
   </bean>
 

@@ -38,12 +38,7 @@
 
 package org.dcm4chee.proxy.ejb;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.EJBException;
 import javax.ejb.Stateless;
 import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
@@ -55,8 +50,6 @@ import javax.jms.QueueSession;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import org.dcm4che.util.UIDUtils;
-import org.dcm4chee.proxy.persistence.FileCache;
 import org.dcm4chee.proxy.persistence.ForwardTask;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 
@@ -73,9 +66,6 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     @Resource(mappedName="queue/ForwardTaskQueue")
     private Queue queue;
     
-    @EJB
-    private AeProperties aeProperties;
-    
     @PersistenceContext(unitName = "dcm4chee-proxy")
     private EntityManager em;
     
@@ -83,34 +73,14 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     public void persist(ForwardTask forwardTask) {
         em.persist(forwardTask);
     }
-    
-    public int setFilesetUID(String fsUID, String seriesIUID, String sourceAET) {
-        return em.createNamedQuery(FileCache.UPDATE_FILESET_UID)
-            .setParameter(1, fsUID)
-            .setParameter(2, FileCache.NO_FILESET_UID)
-            .setParameter(3, seriesIUID)
-            .setParameter(4, sourceAET)
-            .executeUpdate();
-    }
 
     @Override
-    public void scheduleForwardTask(String seriesIUID, List<String> sourceAETs) {
-        for (String aet : sourceAETs){
-            String fsUID = UIDUtils.createUID();
-            setFilesetUID(fsUID, seriesIUID, aet);
-            ArrayList<String> targetAETs = aeProperties.getTargetAETs(aet);
-            for (String targetAET : targetAETs) {
-                ForwardTask ft = storeForwardTask(fsUID, targetAET);
-                try {
-                    sendStoreSCPMessage(ft);
-                } catch (JMSException e) {
-                    throw new EJBException(e.getMessage());
-                }
-                
-            }
+    public void scheduleForwardTask(String fsUID, String[] targetAETs) throws JMSException {
+        for (String targetAET : targetAETs) {
+            ForwardTask ft = storeForwardTask(fsUID, targetAET);
+            sendStoreSCPMessage(ft);
         }
     }
-    
 
     private void sendStoreSCPMessage(ForwardTask ft) throws JMSException {
         QueueConnection qcon = qconFactory.createQueueConnection();
