@@ -36,22 +36,22 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.proxy.ejb;
+package org.dcm4chee.proxy.beans.util;
 
-import javax.ejb.Local;
+import javax.ejb.EJB;
 
-import org.dcm4chee.proxy.persistence.FileCache;
+import org.dcm4chee.proxy.ejb.FileCacheManager;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
+ * 
  */
-@Local
-public interface FileCacheManager {
-
-    void persist(FileCache fileCache);
-
-    int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
-
-    void initTimer();
+public class InitTimer {
+    
+    @EJB
+    private FileCacheManager fileCacheMgr;
+    
+    public void init() {
+        fileCacheMgr.initTimer();
+    }
 }

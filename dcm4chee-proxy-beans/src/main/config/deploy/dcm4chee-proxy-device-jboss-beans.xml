@@ -121,6 +121,16 @@
         </map>
       </parameter>
     </install>
+    <install method="setProperty">
+      <parameter>timerInterval</parameter>
+      <parameter>
+        <javabean xmlns="urn:jboss:javabean:2.0" class="java.lang.Integer">
+          <constructor>
+            <property name="anInteger">15</property><!-- time in seconds -->
+          </constructor>
+        </javabean>
+      </parameter>
+    </install>
     <incallback method="addApplicationEntity" />
     <uncallback method="removeApplicationEntity" />
   </bean>
@@ -183,5 +193,11 @@
     <start method="start" />
     <stop method="stop" />
   </bean>
-
+  
+  <!-- InitTimer -->
+  <bean name="InitTimer" class="org.dcm4chee.proxy.beans.util.InitTimer" access-mode="ALL">
+    <demand>InitDeviceHolder</demand>
+    <start method="init" />
+  </bean>
+  
 </deployment>

@@ -45,9 +45,11 @@ import java.util.Map;
 
 import javax.annotation.Resource;
 import javax.ejb.EJB;
+import javax.ejb.ScheduleExpression;
 import javax.ejb.Stateless;
 import javax.ejb.Timeout;
 import javax.ejb.Timer;
+import javax.ejb.TimerConfig;
 import javax.ejb.TimerService;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
@@ -69,6 +71,9 @@ public class FileCacheManagerBean implements FileCacheManager {
     
     private static final Logger LOG =
         LoggerFactory.getLogger(ForwardTaskStatus.class);
+    
+    private int timerInterval;
+    private Timer timer;
     
     @EJB
     private ForwardTaskManager forwardTaskMgr;
@@ -116,21 +121,24 @@ public class FileCacheManagerBean implements FileCacheManager {
             .setParameter(4, sourceAET)
             .executeUpdate();
     }
-
+    
     @Override
-    public void setTimer(long intervalDuration) {
-        LOG.info("Setting a programmatic timeout for " + intervalDuration
-                + " milliseconds from now.");
-        Timer timer =
-                timerService.createTimer(intervalDuration, "Created new programmatic timer");
+    public void initTimer(){
+        TimerConfig timerConfig = new TimerConfig();
+        timerConfig.setPersistent(false);
+        ScheduleExpression schedule = new ScheduleExpression();
+        timerInterval = (Integer) device.getDevice().getProperty("timerInterval")*1000;
+        schedule.second(timerInterval);
+        LOG.info("Setting a timeout for " + timerInterval/1000 + " seconds from now.");
+        timer = timerService.createIntervalTimer(timerInterval, timerInterval, timerConfig);
     }
 
     @SuppressWarnings("unchecked")
     @Timeout
     @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-    public void checkForNewSeries() throws JMSException {
+    public void checkForNewReceivedSeries() throws JMSException {
         Calendar interval = Calendar.getInstance();
-        interval.add(Calendar.MINUTE, -1);
+        interval.add(Calendar.MINUTE, -timerInterval);
         List<String> newSeriesList =
                 findSeriesReceivedBefore(interval.getTime());
         for (String seriesIUID : newSeriesList) {
