@@ -49,6 +49,8 @@ import javax.ejb.Stateless;
 import javax.ejb.Timeout;
 import javax.ejb.Timer;
 import javax.ejb.TimerService;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.jms.JMSException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -89,8 +91,7 @@ public class FileCacheManagerBean implements FileCacheManager {
     public List<String> findSeriesReceivedBefore(Date before) {
         return em.createNamedQuery(FileCache.FIND_SERIES_RECEIVED_BEFORE, String.class)
             .setParameter(1, FileCache.NO_FILESET_UID)
-            .setParameter(2, FileCache.NO_ERROR_CODE)
-            .setParameter(3, before)
+            .setParameter(2, before)
             .getResultList();
     }
 
@@ -115,15 +116,6 @@ public class FileCacheManagerBean implements FileCacheManager {
             .setParameter(4, sourceAET)
             .executeUpdate();
     }
-    
-    public int setErrorCode(String errorCode, String seriesIUID, String sourceAET) {
-        return em.createNamedQuery(FileCache.UPDATE_FILESET_UID)
-            .setParameter(1, errorCode)
-            .setParameter(2, FileCache.NO_ERROR_CODE)
-            .setParameter(3, seriesIUID)
-            .setParameter(4, sourceAET)
-            .executeUpdate();
-    }
 
     @Override
     public void setTimer(long intervalDuration) {
@@ -144,16 +136,14 @@ public class FileCacheManagerBean implements FileCacheManager {
             List<String> sourceAETs = findSourceAETsOfSeries(seriesIUID);
             for (String sourceAET : sourceAETs) {
                 String fsUID = UIDUtils.createUID();
+                setFilesetUID(fsUID, seriesIUID, sourceAET);
                 Map<String, String[]> forwardRules =
                         (Map<String, String[]>) device.getDevice().getProperty("ForwardRules");
                 String[] targetAETs = forwardRules.get(sourceAET);
-                if (targetAETs.length > 0) {
+                if (targetAETs.length > 0)
                     forwardTaskMgr.scheduleForwardTask(fsUID, targetAETs);
-                    setFilesetUID(fsUID, seriesIUID, sourceAET);
-                } else {
+                else
                     LOG.info("No target AETs defined for " + sourceAET);
-                    setErrorCode(FileCache.NO_TARGET_AET, seriesIUID, sourceAET);
-                }
             }
         }
     }
