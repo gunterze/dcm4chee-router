@@ -129,8 +129,14 @@ public class FileCacheManagerBean implements FileCacheManager {
         ScheduleExpression schedule = new ScheduleExpression();
         timerInterval = (Integer) device.getDevice().getProperty("timerInterval")*1000;
         schedule.second(timerInterval);
-        LOG.info("Setting a timeout for " + timerInterval/1000 + " seconds from now.");
+        LOG.info("Creating timer with " + timerInterval/1000 + " seconds interval");
         timer = timerService.createIntervalTimer(timerInterval, timerInterval, timerConfig);
+    }
+    
+    @Override
+    public void cancelTimer() {
+        LOG.info("Canceling timer");
+        timer.cancel();
     }
 
     @SuppressWarnings("unchecked")

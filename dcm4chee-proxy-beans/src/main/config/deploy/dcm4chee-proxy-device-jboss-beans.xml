@@ -198,6 +198,7 @@
   <bean name="InitTimer" class="org.dcm4chee.proxy.beans.util.InitTimer" access-mode="ALL">
     <demand>InitDeviceHolder</demand>
     <start method="init" />
+    <stop method="cancel" />
   </bean>
   
 </deployment>

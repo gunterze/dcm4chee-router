@@ -54,4 +54,6 @@ public interface FileCacheManager {
     int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
 
     void initTimer();
+
+    void cancelTimer();
 }
