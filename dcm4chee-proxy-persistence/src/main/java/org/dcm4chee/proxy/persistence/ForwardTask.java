@@ -58,12 +58,10 @@ public class ForwardTask implements Serializable{
     private static final long serialVersionUID = 5400645502128519891L;
     
     @Id
-    @Basic(optional = false)
     @Column(name = "target_aet")
     private String targetAET;
     
     @Id
-    @Basic(optional = false)
     @Column(name = "fileset_uid")
     private String filesetUID;
     

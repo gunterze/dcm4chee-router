@@ -54,13 +54,13 @@ import javax.persistence.TemporalType;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- *
+ * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
 @NamedQueries({
     @NamedQuery(
         name="FileCache.findSeriesReceivedBefore",
         query="SELECT f.seriesInstanceUID FROM FileCache f WHERE f.filesetUID = ?1 "
-            + "GROUP BY f.seriesInstanceUID HAVING MAX(f.createdTime) < ?2"),
+            + "AND f.errorCode = ?2 GROUP BY f.seriesInstanceUID HAVING MAX(f.createdTime) < ?3"),
     @NamedQuery(
         name="FileCache.findSourceAETsOfSeries",
         query="SELECT DISTINCT f.sourceAET FROM FileCache f WHERE f.filesetUID = ?1 "
@@ -71,6 +71,10 @@ import javax.persistence.TemporalType;
     @NamedQuery(
         name="FileCache.updateFilesetUID",
         query="UPDATE FileCache f SET filesetUID = ?1 WHERE f.filesetUID = ?2 "
+            + "AND f.seriesInstanceUID = ?3 AND f.sourceAET = ?4"),
+    @NamedQuery(
+        name="FileCache.updateErrorCode",
+        query="UPDATE FileCache f SET errorCode = ?1 WHERE f.errorCode = ?2 "
             + "AND f.seriesInstanceUID = ?3 AND f.sourceAET = ?4")
     })
 @Entity
@@ -78,10 +82,13 @@ import javax.persistence.TemporalType;
 public class FileCache {
 
     public static final String NO_FILESET_UID = "-";
+    public static final String NO_ERROR_CODE = "-";
+    public static final String NO_TARGET_AET = "Error: no target AET configured";
     public static final String FIND_SERIES_RECEIVED_BEFORE = "FileCache.findSeriesReceivedBefore";
     public static final String FIND_SOURCE_AETS_OF_SERIES = "FileCache.findSourceAETsOfSeries";
     public static final String FIND_BY_FILESET_UID = "FileCache.findByFilesetUID";
     public static final String UPDATE_FILESET_UID = "FileCache.updateFilesetUID";
+    public static final String UPDATE_ERROR_CODE = "FileCache.updateErrorCode";
 
     @Id
     @GeneratedValue
@@ -120,6 +127,10 @@ public class FileCache {
     @Basic(optional = false)
     @Column(name = "fileset_uid")
     private String filesetUID;
+    
+    @Basic(optional = true)
+    @Column(name = "error_code")
+    private String errorCode;
 
     @PrePersist
     public void onPrePersist() {
@@ -188,6 +199,14 @@ public class FileCache {
 
     public void setFilesetUID(String filesetUID) {
         this.filesetUID = filesetUID;
+    }
+
+    public void setErrorCode(String errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
     }
 
 }

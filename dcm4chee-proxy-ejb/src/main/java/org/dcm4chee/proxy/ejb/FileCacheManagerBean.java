@@ -89,7 +89,8 @@ public class FileCacheManagerBean implements FileCacheManager {
     public List<String> findSeriesReceivedBefore(Date before) {
         return em.createNamedQuery(FileCache.FIND_SERIES_RECEIVED_BEFORE, String.class)
             .setParameter(1, FileCache.NO_FILESET_UID)
-            .setParameter(2, before)
+            .setParameter(2, FileCache.NO_ERROR_CODE)
+            .setParameter(3, before)
             .getResultList();
     }
 
@@ -110,6 +111,15 @@ public class FileCacheManagerBean implements FileCacheManager {
         return em.createNamedQuery(FileCache.UPDATE_FILESET_UID)
             .setParameter(1, fsUID)
             .setParameter(2, FileCache.NO_FILESET_UID)
+            .setParameter(3, seriesIUID)
+            .setParameter(4, sourceAET)
+            .executeUpdate();
+    }
+    
+    public int setErrorCode(String errorCode, String seriesIUID, String sourceAET) {
+        return em.createNamedQuery(FileCache.UPDATE_FILESET_UID)
+            .setParameter(1, errorCode)
+            .setParameter(2, FileCache.NO_ERROR_CODE)
             .setParameter(3, seriesIUID)
             .setParameter(4, sourceAET)
             .executeUpdate();
@@ -140,8 +150,10 @@ public class FileCacheManagerBean implements FileCacheManager {
                 if (targetAETs.length > 0) {
                     forwardTaskMgr.scheduleForwardTask(fsUID, targetAETs);
                     setFilesetUID(fsUID, seriesIUID, sourceAET);
-                } else
+                } else {
                     LOG.info("No target AETs defined for " + sourceAET);
+                    setErrorCode(FileCache.NO_TARGET_AET, seriesIUID, sourceAET);
+                }
             }
         }
     }
