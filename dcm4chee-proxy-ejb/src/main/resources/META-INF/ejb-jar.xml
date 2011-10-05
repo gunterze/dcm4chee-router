@@ -14,7 +14,7 @@
           <hour>*</hour>
         </schedule>
         <timeout-method>
-          <method-name>updateFileCacheManagerTimeout</method-name>
+          <method-name>checkForNewSeries</method-name>
         </timeout-method>
         <persistent>false</persistent>
       </timer>

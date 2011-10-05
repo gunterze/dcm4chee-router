@@ -55,7 +55,6 @@ import javax.jms.JMSException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import org.dcm4che.util.UIDUtils;
 import org.dcm4chee.proxy.persistence.FileCache;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 import org.slf4j.Logger;
@@ -108,6 +107,7 @@ public class FileCacheManagerBean implements FileCacheManager {
             .getResultList();
     }
 
+    @Override
     public int setFilesetUID(String fsUID, String seriesIUID, String sourceAET) {
         return em.createNamedQuery(FileCache.UPDATE_FILESET_UID)
             .setParameter(1, fsUID)
@@ -127,7 +127,8 @@ public class FileCacheManagerBean implements FileCacheManager {
 
     @SuppressWarnings("unchecked")
     @Timeout
-    public void updateFileCacheManagerTimeout() throws JMSException {
+    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+    public void checkForNewSeries() throws JMSException {
         Calendar interval = Calendar.getInstance();
         interval.add(Calendar.MINUTE, -1);
         List<String> newSeriesList =
@@ -135,15 +136,13 @@ public class FileCacheManagerBean implements FileCacheManager {
         for (String seriesIUID : newSeriesList) {
             List<String> sourceAETs = findSourceAETsOfSeries(seriesIUID);
             for (String sourceAET : sourceAETs) {
-                String fsUID = UIDUtils.createUID();
-                setFilesetUID(fsUID, seriesIUID, sourceAET);
                 Map<String, String[]> forwardRules =
                         (Map<String, String[]>) device.getDevice().getProperty("ForwardRules");
-                String[] targetAETs = forwardRules.get(sourceAET);
-                if (targetAETs.length > 0)
-                    forwardTaskMgr.scheduleForwardTask(fsUID, targetAETs);
+                String[] destinationAETs = forwardRules.get(sourceAET);
+                if (destinationAETs.length > 0)
+                    forwardTaskMgr.scheduleForwardTask(seriesIUID, sourceAET, destinationAETs);
                 else
-                    LOG.info("No target AETs defined for " + sourceAET);
+                    LOG.info("No destination AETs defined for " + sourceAET);
             }
         }
     }

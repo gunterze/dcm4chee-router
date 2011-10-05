@@ -44,7 +44,7 @@ package org.dcm4chee.proxy.persistence;
 public enum ForwardTaskStatus {
     
     SCHEDULED,
-    COMPLETE,
-    ERROR
+    COMPLETED,
+    FAILED
     
 }

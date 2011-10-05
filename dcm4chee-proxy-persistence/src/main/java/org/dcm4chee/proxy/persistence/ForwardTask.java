@@ -62,16 +62,16 @@ public class ForwardTask implements Serializable{
     private int pk;
 
     @Basic(optional = false)
-    @Column(name = "target_aet")
-    private String targetAET;
+    @Column(name = "destination_aet")
+    private String destinationAET;
     
     @Basic(optional = false)
     @Column(name = "fileset_uid")
     private String filesetUID;
     
     @Basic(optional = false)
-    @Column(name= "fileset_status")
-    private ForwardTaskStatus filesetStatus;
+    @Column(name= "forwardtask_status")
+    private ForwardTaskStatus forwardTaskStatus;
     
     @Basic(optional = true)
     @Column(name = "error_code")
@@ -93,12 +93,12 @@ public class ForwardTask implements Serializable{
         return filesetUID;
     }
 
-    public void setFilesetStatus(ForwardTaskStatus status) {
-        this.filesetStatus = status;
+    public void setForwardTaskStatus(ForwardTaskStatus status) {
+        this.forwardTaskStatus = status;
     }
 
-    public ForwardTaskStatus getFilesetStatus() {
-        return filesetStatus;
+    public ForwardTaskStatus getForwardTaskStatus() {
+        return forwardTaskStatus;
     }
 
     public void setErrorCode(String code) {
@@ -109,11 +109,11 @@ public class ForwardTask implements Serializable{
         return errorCode;
     }
 
-    public void setTargetAET(String targetAET) {
-        this.targetAET = targetAET;
+    public void setDestinationAET(String targetAET) {
+        this.destinationAET = targetAET;
     }
 
-    public String getTargetAET() {
-        return targetAET;
+    public String getDestinationAET() {
+        return destinationAET;
     }
 }

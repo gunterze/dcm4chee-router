@@ -52,6 +52,7 @@ public interface ForwardTaskManager {
 
     void persist(ForwardTask forwardTask);
 
-    void scheduleForwardTask(String seriesIUID, String[] sourceAETs) throws JMSException;
+    void scheduleForwardTask(String seriesIUID, String sourceAET,
+            String[] destinationAETs) throws JMSException;
 
 }

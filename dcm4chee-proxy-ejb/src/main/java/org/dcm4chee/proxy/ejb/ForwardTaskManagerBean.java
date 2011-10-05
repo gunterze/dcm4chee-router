@@ -39,6 +39,7 @@
 package org.dcm4chee.proxy.ejb;
 
 import javax.annotation.Resource;
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
@@ -50,6 +51,7 @@ import javax.jms.QueueSession;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import org.dcm4che.util.UIDUtils;
 import org.dcm4chee.proxy.persistence.ForwardTask;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 
@@ -59,6 +61,9 @@ import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
  */
 @Stateless
 public class ForwardTaskManagerBean implements ForwardTaskManager {
+    
+    @EJB
+    private FileCacheManager fileCacheMgr;
     
     @Resource(mappedName="java:/JmsXA")
     private QueueConnectionFactory qconFactory;
@@ -75,9 +80,12 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     }
 
     @Override
-    public void scheduleForwardTask(String fsUID, String[] targetAETs) throws JMSException {
-        for (String targetAET : targetAETs) {
-            ForwardTask ft = storeForwardTask(fsUID, targetAET);
+    public void scheduleForwardTask(String seriesIUID, String sourceAET, String[] destinationAETs) 
+        throws JMSException {
+        String fsUID = UIDUtils.createUID();
+        fileCacheMgr.setFilesetUID(fsUID, seriesIUID, sourceAET);
+        for (String destinationAET : destinationAETs) {
+            ForwardTask ft = storeForwardTask(fsUID, destinationAET);
             sendStoreSCPMessage(ft);
         }
     }
@@ -93,11 +101,11 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
         qcon.close();
     }
 
-    private ForwardTask storeForwardTask(String fsUID, String targetAET) {
+    private ForwardTask storeForwardTask(String fsUID, String destinationAET) {
         ForwardTask ft = new ForwardTask();
         ft.setFilesetUID(fsUID);
-        ft.setFilesetStatus(ForwardTaskStatus.SCHEDULED);
-        ft.setTargetAET(targetAET);
+        ft.setForwardTaskStatus(ForwardTaskStatus.SCHEDULED);
+        ft.setDestinationAET(destinationAET);
         ft.setErrorCode("-");
         persist(ft);
         return ft;

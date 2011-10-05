@@ -52,4 +52,6 @@ public interface FileCacheManager {
     void persist(FileCache fileCache);
 
     void setTimer(long intervalDuration);
+
+    int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
 }
