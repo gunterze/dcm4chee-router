@@ -37,7 +37,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 
-package org.dcm4chee.proxy.beans.forward;
+package org.dcm4chee.proxy.beans.listener;
 
 import javax.jms.JMSException;
 import javax.jms.Message;

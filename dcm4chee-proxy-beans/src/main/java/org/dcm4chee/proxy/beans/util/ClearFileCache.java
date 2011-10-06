@@ -36,15 +36,45 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+package org.dcm4chee.proxy.beans.util;
 
-package org.dcm4chee.proxy.beans.send;
+import java.io.File;
+import java.util.List;
+
+import javax.ejb.EJB;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.dcm4chee.proxy.ejb.FileCacheManager;
+import org.dcm4chee.proxy.persistence.FileCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  * 
  */
-public class CStoreSCUImpl  {
+public class ClearFileCache {
     
+    private static final Logger LOG =
+        LoggerFactory.getLogger(ClearFileCache.class);
     
-
+    @EJB
+    private FileCacheManager fileCacheMgr;
+    
+    @PersistenceContext(unitName = "dcm4chee-proxy")
+    private EntityManager em;
+    
+    public void removeUnknownDestinationData() {
+        List<FileCache> orphans = fileCacheMgr.findByFilesetUIDNotInForwardTask();
+        for (FileCache orphan : orphans) {
+            File file2delete = new File(orphan.getFilePath());
+            if (file2delete.delete()) {
+                em.remove(orphan);
+            } else {
+                LOG.error("Failed to delete " +orphan.getFilePath());
+            }
+        }
+    }
 }
