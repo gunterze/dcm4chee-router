@@ -46,7 +46,7 @@ import org.dcm4chee.proxy.ejb.FileCacheManager;
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  * 
  */
-public class TriggerTimer {
+public class FileCacheManagerTimer {
     
     @EJB
     private FileCacheManager fileCacheMgr;

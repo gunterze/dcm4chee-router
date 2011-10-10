@@ -40,11 +40,14 @@ package org.dcm4chee.proxy.beans.util;
 
 import java.io.File;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.ejb.EJB;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import org.dcm4che.net.Device;
 import org.dcm4chee.proxy.ejb.FileCacheManager;
 import org.dcm4chee.proxy.persistence.FileCache;
 import org.slf4j.Logger;
@@ -57,6 +60,10 @@ import org.slf4j.LoggerFactory;
  */
 public class ClearFileCache {
     
+    Timer timer;
+    
+    private Device device;
+    
     private static final Logger LOG =
         LoggerFactory.getLogger(ClearFileCache.class);
     
@@ -66,15 +73,39 @@ public class ClearFileCache {
     @PersistenceContext(unitName = "dcm4chee-proxy")
     private EntityManager em;
     
-    public void removeUnknownDestinationData() {
-        List<FileCache> orphans = fileCacheMgr.findByFilesetUIDNotInForwardTask();
-        for (FileCache orphan : orphans) {
-            File file2delete = new File(orphan.getFilePath());
-            if (file2delete.delete()) {
-                em.remove(orphan);
-            } else {
-                LOG.error("Failed to delete " +orphan.getFilePath());
+    public Device getDevice() {
+        return device;
+    }
+
+    public void setDevice(Device device) {
+        this.device = device;
+    }
+    
+    class RemoveUnknownDestinationData extends TimerTask {
+        public void run() {
+            List<FileCache> orphans = fileCacheMgr.findByFilesetUIDNotInForwardTask();
+            for (FileCache orphan : orphans) {
+                File file2delete = new File(orphan.getFilePath());
+                try {
+                    if (!file2delete.delete()) {
+                            LOG.error("Error deleting " + file2delete);
+                    }
+                    em.remove(orphan);
+                } catch (RuntimeException e) {
+                    LOG.error(e.getMessage());
+                }
             }
         }
+    }
+    
+    public void initClearFileCacheTimer() {
+        timer = new Timer();
+        int timerInterval = (Integer) device.getProperty("clearFileCacheInterval")*1000;
+        LOG.info("Creating clearFileCacheTimer with " + timerInterval/1000 + " seconds interval");
+        timer.schedule(new RemoveUnknownDestinationData(), timerInterval, timerInterval);
+    }
+    
+    public void cancelClearFileCacheTimer() {
+        timer.cancel();
     }
 }

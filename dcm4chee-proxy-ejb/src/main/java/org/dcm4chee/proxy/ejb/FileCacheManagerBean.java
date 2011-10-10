@@ -67,6 +67,7 @@ import org.slf4j.LoggerFactory;
 import com.mysema.query.hql.HQLQuery;
 import com.mysema.query.hql.HQLSubQuery;
 import com.mysema.query.hql.hibernate.HibernateQuery;
+import com.mysema.query.jpa.impl.JPAQuery;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -122,7 +123,7 @@ public class FileCacheManagerBean implements FileCacheManager {
     public List<FileCache> findByFilesetUIDNotInForwardTask() {
         QFileCache fileCache = QFileCache.fileCache;
         QForwardTask forwardTask = QForwardTask.forwardTask;
-        HQLQuery query = new HibernateQuery();
+        JPAQuery query = new JPAQuery(em); 
         return query.from(fileCache)
                 .where(fileCache.filesetUID.ne("-").and(fileCache.filesetUID.notIn(
                         new HQLSubQuery().from(forwardTask).list(forwardTask.filesetUID))))
@@ -144,9 +145,9 @@ public class FileCacheManagerBean implements FileCacheManager {
         TimerConfig timerConfig = new TimerConfig();
         timerConfig.setPersistent(false);
         ScheduleExpression schedule = new ScheduleExpression();
-        timerInterval = (Integer) device.getDevice().getProperty("timerInterval")*1000;
+        timerInterval = (Integer) device.getDevice().getProperty("checkForNewReceivedSeriesInterval")*1000;
         schedule.second(timerInterval);
-        LOG.info("Creating timer with " + timerInterval/1000 + " seconds interval");
+        LOG.info("Creating checkForNewReceivedSeriesTimer with " + timerInterval/1000 + " seconds interval");
         timer = timerService.createIntervalTimer(timerInterval, timerInterval, timerConfig);
     }
     
