@@ -55,4 +55,6 @@ public interface ForwardTaskManager {
     void scheduleForwardTask(String seriesIUID, String sourceAET,
             String[] destinationAETs) throws JMSException;
 
+    void remove(int pk);
+
 }

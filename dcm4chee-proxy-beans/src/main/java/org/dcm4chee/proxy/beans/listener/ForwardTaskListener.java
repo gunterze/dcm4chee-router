@@ -39,9 +39,11 @@
 
 package org.dcm4chee.proxy.beans.listener;
 
+import javax.ejb.EJB;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
@@ -52,13 +54,23 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.dcm4che.net.Device;
+import org.dcm4chee.proxy.ejb.ForwardTaskManager;
+import org.dcm4chee.proxy.persistence.ForwardTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
- * 
+ * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
 public class ForwardTaskListener implements MessageListener {
-
+    
+    private static final Logger LOG =
+        LoggerFactory.getLogger(ForwardTaskListener.class);
+    
+    @EJB
+    private ForwardTaskManager forwardTaskMgr;
+    
     private Device device;
 
     private QueueConnectionFactory qconFactory;
@@ -104,9 +116,12 @@ public class ForwardTaskListener implements MessageListener {
 
     @Override
     public void onMessage(Message message) {
-        // TODO Auto-generated method stub
-        
+        try {
+            ForwardTask ft =  (ForwardTask)((ObjectMessage)message).getObject();
+            //TODO: send data
+            forwardTaskMgr.remove(ft.getPk());
+        } catch (JMSException e) {
+            LOG.error(e.getMessage());
+        }
     }
-    
-
 }

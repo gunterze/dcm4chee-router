@@ -36,30 +36,34 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.proxy.ejb;
+package org.dcm4chee.proxy.beans.store;
 
-import java.util.List;
+import java.util.Map;
 
-import javax.ejb.Local;
-
-import org.dcm4chee.proxy.persistence.FileCache;
+import org.dcm4che.net.Connection;
+import org.dcm4che.net.Device;
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
+ * 
  */
-@Local
-public interface FileCacheManager {
+public class StoreSCU {
+    
+    private Device device;
+    
+    private final Connection remote = new Connection();
 
-    void persist(FileCache fileCache);
+    public void setDevice(Device device) {
+        this.device = device;
+    }
 
-    int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
+    public Device getDevice() {
+        return device;
+    }
+    
+    private void configureConnection(String destinationAET) {
+        Map<String, String[]> retrieveConnections =
+            (Map<String, String[]>) device.getProperty("Retrieve.connections");
+    }
 
-    void initTimer();
-
-    void cancelTimer();
-
-    List<FileCache> findByFilesetUIDNotInForwardTask();
-
-    void remove(int pk);
 }

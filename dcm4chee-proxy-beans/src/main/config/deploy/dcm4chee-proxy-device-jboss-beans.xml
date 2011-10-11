@@ -198,7 +198,7 @@
   </bean>
 
   <!-- ForwardTaskListener -->
-  <bean name="ForwardTaskListener" class="org.dcm4chee.proxy.beans.listener.ForwardTaskListener">
+  <bean name="ForwardTaskListener" class="org.dcm4chee.proxy.beans.listener.ForwardTaskListener" access-mode="ALL">
     <property name="device"><inject bean="Device" /></property>
     <start method="start" />
     <stop method="stop" />

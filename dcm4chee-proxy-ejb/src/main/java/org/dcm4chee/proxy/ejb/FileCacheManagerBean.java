@@ -64,9 +64,7 @@ import org.dcm4chee.proxy.persistence.QForwardTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mysema.query.hql.HQLQuery;
 import com.mysema.query.hql.HQLSubQuery;
-import com.mysema.query.hql.hibernate.HibernateQuery;
 import com.mysema.query.jpa.impl.JPAQuery;
 
 /**
@@ -87,7 +85,7 @@ public class FileCacheManagerBean implements FileCacheManager {
     
     @EJB
     private DeviceHolder device;
-    
+
     @Resource
     TimerService timerService;
 
@@ -98,7 +96,13 @@ public class FileCacheManagerBean implements FileCacheManager {
     public void persist(FileCache fileCache) {
         em.persist(fileCache);
     }
-
+    
+    @Override
+    public void remove(int pk) {
+        FileCache fileCache = em.find(FileCache.class, pk);
+        em.remove(fileCache);
+    }
+    
     public List<String> findSeriesReceivedBefore(Date before) {
         return em.createNamedQuery(FileCache.FIND_SERIES_RECEIVED_BEFORE, String.class)
             .setParameter(1, FileCache.NO_FILESET_UID)
@@ -174,7 +178,7 @@ public class FileCacheManagerBean implements FileCacheManager {
                 if (destinationAETs.length > 0)
                     forwardTaskMgr.scheduleForwardTask(seriesIUID, sourceAET, destinationAETs);
                 else
-                    LOG.info("No destination AETs defined for " + sourceAET);
+                    LOG.error("No destination AETs defined for " + sourceAET);
             }
         }
     }

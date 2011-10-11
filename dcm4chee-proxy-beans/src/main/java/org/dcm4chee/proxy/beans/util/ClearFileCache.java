@@ -44,8 +44,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.ejb.EJB;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 
 import org.dcm4che.net.Device;
 import org.dcm4chee.proxy.ejb.FileCacheManager;
@@ -70,9 +68,6 @@ public class ClearFileCache {
     @EJB
     private FileCacheManager fileCacheMgr;
     
-    @PersistenceContext(unitName = "dcm4chee-proxy")
-    private EntityManager em;
-    
     public Device getDevice() {
         return device;
     }
@@ -83,14 +78,14 @@ public class ClearFileCache {
     
     class RemoveUnknownDestinationData extends TimerTask {
         public void run() {
-            List<FileCache> orphans = fileCacheMgr.findByFilesetUIDNotInForwardTask();
-            for (FileCache orphan : orphans) {
-                File file2delete = new File(orphan.getFilePath());
+            List<FileCache> fileCacheList = fileCacheMgr.findByFilesetUIDNotInForwardTask();
+            for (FileCache fileCache : fileCacheList) {
+                File file = new File(fileCache.getFilePath());
                 try {
-                    if (!file2delete.delete()) {
-                            LOG.error("Error deleting " + file2delete);
-                    }
-                    em.remove(orphan);
+                    if (file.delete())
+                        fileCacheMgr.remove(fileCache.getPk());
+                    else
+                        LOG.error("Error deleting " + file);
                 } catch (RuntimeException e) {
                     LOG.error(e.getMessage());
                 }

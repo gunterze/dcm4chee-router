@@ -78,7 +78,13 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     public void persist(ForwardTask forwardTask) {
         em.persist(forwardTask);
     }
-
+    
+    @Override
+    public void remove(int pk) {
+        ForwardTask forwardTask = em.find(ForwardTask.class, pk);
+        em.remove(forwardTask);
+    }
+    
     @Override
     public void scheduleForwardTask(String seriesIUID, String sourceAET, String[] destinationAETs) 
         throws JMSException {
@@ -89,7 +95,7 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
             sendStoreSCPMessage(ft);
         }
     }
-
+    
     private void sendStoreSCPMessage(ForwardTask ft) throws JMSException {
         QueueConnection qcon = qconFactory.createQueueConnection();
         QueueSession qsession = qcon.createQueueSession(false, 0);
