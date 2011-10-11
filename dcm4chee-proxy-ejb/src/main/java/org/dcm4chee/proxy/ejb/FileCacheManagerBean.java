@@ -45,9 +45,11 @@ import java.util.Map;
 
 import javax.annotation.Resource;
 import javax.ejb.EJB;
+import javax.ejb.ScheduleExpression;
 import javax.ejb.Stateless;
 import javax.ejb.Timeout;
 import javax.ejb.Timer;
+import javax.ejb.TimerConfig;
 import javax.ejb.TimerService;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
@@ -55,11 +57,15 @@ import javax.jms.JMSException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-import org.dcm4che.util.UIDUtils;
 import org.dcm4chee.proxy.persistence.FileCache;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
+import org.dcm4chee.proxy.persistence.QFileCache;
+import org.dcm4chee.proxy.persistence.QForwardTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.mysema.query.hql.HQLSubQuery;
+import com.mysema.query.jpa.impl.JPAQuery;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -70,13 +76,16 @@ public class FileCacheManagerBean implements FileCacheManager {
     
     private static final Logger LOG =
         LoggerFactory.getLogger(ForwardTaskStatus.class);
+
+    private int timerInterval;
+    private Timer timer;
     
     @EJB
     private ForwardTaskManager forwardTaskMgr;
     
     @EJB
     private DeviceHolder device;
-    
+
     @Resource
     TimerService timerService;
 
@@ -87,7 +96,13 @@ public class FileCacheManagerBean implements FileCacheManager {
     public void persist(FileCache fileCache) {
         em.persist(fileCache);
     }
-
+    
+    @Override
+    public void remove(int pk) {
+        FileCache fileCache = em.find(FileCache.class, pk);
+        em.remove(fileCache);
+    }
+    
     public List<String> findSeriesReceivedBefore(Date before) {
         return em.createNamedQuery(FileCache.FIND_SERIES_RECEIVED_BEFORE, String.class)
             .setParameter(1, FileCache.NO_FILESET_UID)
@@ -107,7 +122,19 @@ public class FileCacheManagerBean implements FileCacheManager {
             .setParameter(1, fsUID)
             .getResultList();
     }
+    
+    @Override
+    public List<FileCache> findByFilesetUIDNotInForwardTask() {
+        QFileCache fileCache = QFileCache.fileCache;
+        QForwardTask forwardTask = QForwardTask.forwardTask;
+        JPAQuery query = new JPAQuery(em); 
+        return query.from(fileCache)
+                .where(fileCache.filesetUID.ne("-").and(fileCache.filesetUID.notIn(
+                        new HQLSubQuery().from(forwardTask).list(forwardTask.filesetUID))))
+                .list(fileCache);
+    }
 
+    @Override
     public int setFilesetUID(String fsUID, String seriesIUID, String sourceAET) {
         return em.createNamedQuery(FileCache.UPDATE_FILESET_UID)
             .setParameter(1, fsUID)
@@ -116,34 +143,42 @@ public class FileCacheManagerBean implements FileCacheManager {
             .setParameter(4, sourceAET)
             .executeUpdate();
     }
-
+    
     @Override
-    public void setTimer(long intervalDuration) {
-        LOG.info("Setting a programmatic timeout for " + intervalDuration
-                + " milliseconds from now.");
-        Timer timer =
-                timerService.createTimer(intervalDuration, "Created new programmatic timer");
+    public void initTimer(){
+        TimerConfig timerConfig = new TimerConfig();
+        timerConfig.setPersistent(false);
+        ScheduleExpression schedule = new ScheduleExpression();
+        timerInterval = (Integer) device.getDevice().getProperty("checkForNewReceivedSeriesInterval")*1000;
+        schedule.second(timerInterval);
+        LOG.info("Creating checkForNewReceivedSeriesTimer with " + timerInterval/1000 + " seconds interval");
+        timer = timerService.createIntervalTimer(timerInterval, timerInterval, timerConfig);
+    }
+    
+    @Override
+    public void cancelTimer() {
+        LOG.info("Canceling timer");
+        timer.cancel();
     }
 
     @SuppressWarnings("unchecked")
     @Timeout
-    public void updateFileCacheManagerTimeout() throws JMSException {
+    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+    public void checkForNewReceivedSeries() throws JMSException {
         Calendar interval = Calendar.getInstance();
-        interval.add(Calendar.MINUTE, -1);
+        interval.add(Calendar.MINUTE, -timerInterval);
         List<String> newSeriesList =
                 findSeriesReceivedBefore(interval.getTime());
         for (String seriesIUID : newSeriesList) {
             List<String> sourceAETs = findSourceAETsOfSeries(seriesIUID);
             for (String sourceAET : sourceAETs) {
-                String fsUID = UIDUtils.createUID();
-                setFilesetUID(fsUID, seriesIUID, sourceAET);
                 Map<String, String[]> forwardRules =
                         (Map<String, String[]>) device.getDevice().getProperty("ForwardRules");
-                String[] targetAETs = forwardRules.get(sourceAET);
-                if (targetAETs.length > 0)
-                    forwardTaskMgr.scheduleForwardTask(fsUID, targetAETs);
+                String[] destinationAETs = forwardRules.get(sourceAET);
+                if (destinationAETs.length > 0)
+                    forwardTaskMgr.scheduleForwardTask(seriesIUID, sourceAET, destinationAETs);
                 else
-                    LOG.info("No target AETs defined for " + sourceAET);
+                    LOG.error("No destination AETs defined for " + sourceAET);
             }
         }
     }

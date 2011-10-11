@@ -36,15 +36,26 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+package org.dcm4chee.proxy.beans.util;
 
-package org.dcm4chee.proxy.beans.send;
+import javax.ejb.EJB;
+
+import org.dcm4chee.proxy.ejb.FileCacheManager;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  * 
  */
-public class CStoreSCUImpl  {
+public class FileCacheManagerTimer {
     
+    @EJB
+    private FileCacheManager fileCacheMgr;
     
-
+    public void init() {
+        fileCacheMgr.initTimer();
+    }
+    
+    public void cancel() {
+        fileCacheMgr.cancelTimer();
+    }
 }

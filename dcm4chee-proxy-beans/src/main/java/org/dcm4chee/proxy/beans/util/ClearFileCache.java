@@ -36,41 +36,38 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+package org.dcm4chee.proxy.beans.util;
 
-package org.dcm4chee.proxy.beans.forward;
+import java.io.File;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.Queue;
-import javax.jms.QueueConnection;
-import javax.jms.QueueConnectionFactory;
-import javax.jms.QueueReceiver;
-import javax.jms.QueueSession;
-import javax.jms.Session;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
+import javax.ejb.EJB;
 
 import org.dcm4che.net.Device;
+import org.dcm4chee.proxy.ejb.FileCacheManager;
+import org.dcm4chee.proxy.persistence.FileCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
- * @author Gunter Zeilinger <gunterze@gmail.com>
+ * @author Michael Backhaus <michael.backhaus@agfa.com>
  * 
  */
-public class ForwardTaskListener implements MessageListener {
-
-    private Device device;
-
-    private QueueConnectionFactory qconFactory;
+public class ClearFileCache {
     
-    private Queue queue;
-
-    private QueueConnection conn;
-
-    private QueueSession session;
-
-    private QueueReceiver receiver;
-
+    Timer timer;
+    
+    private Device device;
+    
+    private static final Logger LOG =
+        LoggerFactory.getLogger(ClearFileCache.class);
+    
+    @EJB
+    private FileCacheManager fileCacheMgr;
+    
     public Device getDevice() {
         return device;
     }
@@ -78,35 +75,32 @@ public class ForwardTaskListener implements MessageListener {
     public void setDevice(Device device) {
         this.device = device;
     }
-
-    public void start() throws JMSException, NamingException {
-        if (qconFactory == null) {
-            InitialContext ctx = new InitialContext();
-            try {
-                qconFactory = (QueueConnectionFactory) ctx.lookup("ConnectionFactory");
-                queue = (Queue) ctx.lookup("queue/ForwardTaskQueue");
-            } finally {
-                ctx.close();
+    
+    class RemoveUnknownDestinationData extends TimerTask {
+        public void run() {
+            List<FileCache> fileCacheList = fileCacheMgr.findByFilesetUIDNotInForwardTask();
+            for (FileCache fileCache : fileCacheList) {
+                File file = new File(fileCache.getFilePath());
+                try {
+                    if (file.delete())
+                        fileCacheMgr.remove(fileCache.getPk());
+                    else
+                        LOG.error("Error deleting " + file);
+                } catch (RuntimeException e) {
+                    LOG.error(e.getMessage());
+                }
             }
         }
-        conn = qconFactory.createQueueConnection();
-        session = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-        receiver = session.createReceiver(queue);
-        receiver.setMessageListener(this);
-        conn.start();
-    }
-
-    public void stop() throws JMSException {
-        receiver.close();
-        session.close();
-        conn.close();
-    }
-
-    @Override
-    public void onMessage(Message message) {
-        // TODO Auto-generated method stub
-        
     }
     
-
+    public void initClearFileCacheTimer() {
+        timer = new Timer();
+        int timerInterval = (Integer) device.getProperty("clearFileCacheInterval")*1000;
+        LOG.info("Creating clearFileCacheTimer with " + timerInterval/1000 + " seconds interval");
+        timer.schedule(new RemoveUnknownDestinationData(), timerInterval, timerInterval);
+    }
+    
+    public void cancelClearFileCacheTimer() {
+        timer.cancel();
+    }
 }

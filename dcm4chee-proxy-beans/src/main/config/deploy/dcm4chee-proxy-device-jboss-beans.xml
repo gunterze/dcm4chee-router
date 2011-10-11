@@ -121,6 +121,26 @@
         </map>
       </parameter>
     </install>
+    <install method="setProperty">
+      <parameter>checkForNewReceivedSeriesInterval</parameter>
+      <parameter>
+        <javabean xmlns="urn:jboss:javabean:2.0" class="java.lang.Integer">
+          <constructor>
+            <property name="anInteger">15</property><!-- time in seconds -->
+          </constructor>
+        </javabean>
+      </parameter>
+    </install>
+    <install method="setProperty">
+      <parameter>clearFileCacheInterval</parameter>
+      <parameter>
+        <javabean xmlns="urn:jboss:javabean:2.0" class="java.lang.Integer">
+          <constructor>
+            <property name="anInteger">20</property><!-- time in seconds -->
+          </constructor>
+        </javabean>
+      </parameter>
+    </install>
     <incallback method="addApplicationEntity" />
     <uncallback method="removeApplicationEntity" />
   </bean>
@@ -178,10 +198,25 @@
   </bean>
 
   <!-- ForwardTaskListener -->
-  <bean name="ForwardTaskListener" class="org.dcm4chee.proxy.beans.forward.ForwardTaskListener">
+  <bean name="ForwardTaskListener" class="org.dcm4chee.proxy.beans.listener.ForwardTaskListener" access-mode="ALL">
     <property name="device"><inject bean="Device" /></property>
     <start method="start" />
     <stop method="stop" />
   </bean>
-
+  
+  <!-- Init Timer for scheduling of new Files -->
+  <bean name="FileCacheManagerTimer" class="org.dcm4chee.proxy.beans.util.FileCacheManagerTimer" access-mode="ALL">
+    <demand>InitDeviceHolder</demand>
+    <start method="init" />
+    <stop method="cancel" />
+  </bean>
+  
+  <!-- Init Clear File Cache Timer -->
+  <bean name="ClearFileCache" class="org.dcm4chee.proxy.beans.util.ClearFileCache" access-mode="ALL">
+    <demand>InitDeviceHolder</demand>
+    <property name="device"><inject bean="Device" /></property>
+    <start method="initClearFileCacheTimer" />
+    <stop method="cancelClearFileCacheTimer" />
+  </bean>
+  
 </deployment>

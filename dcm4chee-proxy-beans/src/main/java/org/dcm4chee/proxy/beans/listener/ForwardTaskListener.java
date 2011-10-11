@@ -36,84 +36,92 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package org.dcm4chee.proxy.ejb;
 
-import javax.annotation.Resource;
+package org.dcm4chee.proxy.beans.listener;
+
 import javax.ejb.EJB;
-import javax.ejb.Stateless;
 import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
-import javax.jms.QueueSender;
+import javax.jms.QueueReceiver;
 import javax.jms.QueueSession;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import javax.jms.Session;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
-import org.dcm4che.util.UIDUtils;
+import org.dcm4che.net.Device;
+import org.dcm4chee.proxy.ejb.ForwardTaskManager;
 import org.dcm4chee.proxy.persistence.ForwardTask;
-import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
+ * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Michael Backhaus <michael.backhaus@agfa.com>
- * 
  */
-@Stateless
-public class ForwardTaskManagerBean implements ForwardTaskManager {
+public class ForwardTaskListener implements MessageListener {
+    
+    private static final Logger LOG =
+        LoggerFactory.getLogger(ForwardTaskListener.class);
     
     @EJB
-    private FileCacheManager fileCacheMgr;
+    private ForwardTaskManager forwardTaskMgr;
     
-    @Resource(mappedName="java:/JmsXA")
+    private Device device;
+
     private QueueConnectionFactory qconFactory;
     
-    @Resource(mappedName="queue/ForwardTaskQueue")
     private Queue queue;
-    
-    @PersistenceContext(unitName = "dcm4chee-proxy")
-    private EntityManager em;
-    
-    @Override
-    public void persist(ForwardTask forwardTask) {
-        em.persist(forwardTask);
-    }
-    
-    @Override
-    public void remove(int pk) {
-        ForwardTask forwardTask = em.find(ForwardTask.class, pk);
-        em.remove(forwardTask);
-    }
-    
-    @Override
-    public void scheduleForwardTask(String seriesIUID, String sourceAET, String[] destinationAETs) 
-        throws JMSException {
-        String fsUID = UIDUtils.createUID();
-        fileCacheMgr.setFilesetUID(fsUID, seriesIUID, sourceAET);
-        for (String destinationAET : destinationAETs) {
-            ForwardTask ft = storeForwardTask(fsUID, destinationAET);
-            sendStoreSCPMessage(ft);
-        }
-    }
-    
-    private void sendStoreSCPMessage(ForwardTask ft) throws JMSException {
-        QueueConnection qcon = qconFactory.createQueueConnection();
-        QueueSession qsession = qcon.createQueueSession(false, 0);
-        QueueSender qsender = qsession.createSender(queue);
-        ObjectMessage message = qsession.createObjectMessage(ft);
-        qsender.send(message);
-        qsender.close();
-        qsession.close();
-        qcon.close();
+
+    private QueueConnection conn;
+
+    private QueueSession session;
+
+    private QueueReceiver receiver;
+
+    public Device getDevice() {
+        return device;
     }
 
-    private ForwardTask storeForwardTask(String fsUID, String destinationAET) {
-        ForwardTask ft = new ForwardTask();
-        ft.setFilesetUID(fsUID);
-        ft.setForwardTaskStatus(ForwardTaskStatus.SCHEDULED);
-        ft.setDestinationAET(destinationAET);
-        ft.setErrorCode("-");
-        persist(ft);
-        return ft;
+    public void setDevice(Device device) {
+        this.device = device;
+    }
+
+    public void start() throws JMSException, NamingException {
+        if (qconFactory == null) {
+            InitialContext ctx = new InitialContext();
+            try {
+                qconFactory = (QueueConnectionFactory) ctx.lookup("ConnectionFactory");
+                queue = (Queue) ctx.lookup("queue/ForwardTaskQueue");
+            } finally {
+                ctx.close();
+            }
+        }
+        conn = qconFactory.createQueueConnection();
+        session = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+        receiver = session.createReceiver(queue);
+        receiver.setMessageListener(this);
+        conn.start();
+    }
+
+    public void stop() throws JMSException {
+        receiver.close();
+        session.close();
+        conn.close();
+    }
+
+    @Override
+    public void onMessage(Message message) {
+        try {
+            ForwardTask ft =  (ForwardTask)((ObjectMessage)message).getObject();
+            //TODO: send data
+            forwardTaskMgr.remove(ft.getPk());
+        } catch (JMSException e) {
+            LOG.error(e.getMessage());
+        }
     }
 }
