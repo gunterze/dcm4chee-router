@@ -41,7 +41,6 @@ package org.dcm4chee.proxy.beans.util;
 import java.io.File;
 import java.util.List;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 

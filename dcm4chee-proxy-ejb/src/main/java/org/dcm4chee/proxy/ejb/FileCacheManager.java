@@ -62,4 +62,6 @@ public interface FileCacheManager {
     List<FileCache> findByFilesetUIDNotInForwardTask();
 
     void remove(int pk);
+
+    List<FileCache> findByFilesetUID(String fsUID);
 }

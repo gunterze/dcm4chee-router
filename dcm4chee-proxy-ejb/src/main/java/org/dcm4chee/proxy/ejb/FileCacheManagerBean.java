@@ -112,6 +112,7 @@ public class FileCacheManagerBean implements FileCacheManager {
             .getResultList();
     }
 
+    @Override
     public List<FileCache> findByFilesetUID(String fsUID) {
         return em.createNamedQuery(FileCache.FIND_BY_FILESET_UID, FileCache.class)
             .setParameter(1, fsUID)

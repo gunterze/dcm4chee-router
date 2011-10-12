@@ -213,7 +213,7 @@
   
   <!-- Init Clear File Cache Scheduler -->
   <bean name="ClearFileCache" class="org.dcm4chee.proxy.beans.util.ClearFileCache" access-mode="ALL">
-    <property name="device"><inject bean="Device" /></property>
+    <property name="ae"><inject bean="ApplicationEntity" /></property>
     <start method="startClearFileCacheRSP" />
     <stop method="stopClearFileCacheRSP" />
   </bean>
