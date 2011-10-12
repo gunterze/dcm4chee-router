@@ -198,7 +198,7 @@
   </bean>
 
   <!-- ForwardTaskListener -->
-  <bean name="ForwardTaskListener" class="org.dcm4chee.proxy.beans.listener.ForwardTaskListener" access-mode="ALL">
+  <bean name="ForwardTaskListener" class="org.dcm4chee.proxy.beans.send.ForwardTaskListener" access-mode="ALL">
     <property name="device"><inject bean="Device" /></property>
     <start method="start" />
     <stop method="stop" />
@@ -211,12 +211,11 @@
     <stop method="cancel" />
   </bean>
   
-  <!-- Init Clear File Cache Timer -->
+  <!-- Init Clear File Cache Scheduler -->
   <bean name="ClearFileCache" class="org.dcm4chee.proxy.beans.util.ClearFileCache" access-mode="ALL">
-    <demand>InitDeviceHolder</demand>
     <property name="device"><inject bean="Device" /></property>
-    <start method="initClearFileCacheTimer" />
-    <stop method="cancelClearFileCacheTimer" />
+    <start method="startClearFileCacheRSP" />
+    <stop method="stopClearFileCacheRSP" />
   </bean>
   
 </deployment>

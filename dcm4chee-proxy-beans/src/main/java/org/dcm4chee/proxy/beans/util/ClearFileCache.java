@@ -42,6 +42,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.ejb.EJB;
 
@@ -68,6 +70,8 @@ public class ClearFileCache {
     @EJB
     private FileCacheManager fileCacheMgr;
     
+    private ScheduledFuture<?> clearFileCacheRSP;
+    
     public Device getDevice() {
         return device;
     }
@@ -76,7 +80,7 @@ public class ClearFileCache {
         this.device = device;
     }
     
-    class RemoveUnknownDestinationData extends TimerTask {
+    class RemoveUnknownDestinationData implements Runnable {
         public void run() {
             List<FileCache> fileCacheList = fileCacheMgr.findByFilesetUIDNotInForwardTask();
             for (FileCache fileCache : fileCacheList) {
@@ -93,14 +97,15 @@ public class ClearFileCache {
         }
     }
     
-    public void initClearFileCacheTimer() {
-        timer = new Timer();
-        int timerInterval = (Integer) device.getProperty("clearFileCacheInterval")*1000;
-        LOG.info("Creating clearFileCacheTimer with " + timerInterval/1000 + " seconds interval");
-        timer.schedule(new RemoveUnknownDestinationData(), timerInterval, timerInterval);
+    public void startClearFileCacheRSP() {
+        int timerInterval = (Integer) device.getProperty("clearFileCacheInterval");
+        clearFileCacheRSP = device.scheduleAtFixedRate(new RemoveUnknownDestinationData(),
+                timerInterval, timerInterval, TimeUnit.SECONDS);
+        LOG.info("Started clearFileCacheRSP with " + timerInterval + " seconds interval");
     }
     
-    public void cancelClearFileCacheTimer() {
-        timer.cancel();
+    public void stopClearFileCacheRSP() {
+        if (clearFileCacheRSP != null)
+            clearFileCacheRSP.cancel(false);
     }
 }
