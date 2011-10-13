@@ -71,7 +71,11 @@ import javax.persistence.TemporalType;
     @NamedQuery(
         name="FileCache.updateFilesetUID",
         query="UPDATE FileCache f SET filesetUID = ?1 WHERE f.filesetUID = ?2 "
-            + "AND f.seriesInstanceUID = ?3 AND f.sourceAET = ?4")
+            + "AND f.seriesInstanceUID = ?3 AND f.sourceAET = ?4"),
+    @NamedQuery(
+        name="FileCache.findFilesetUIDNotInForwardTask",
+        query="SELECT fs from FileCache fs WHERE fs.filesetUID NOT IN "
+            + "(SELECT ft.filesetUID from ForwardTask ft)")
     })
 @Entity
 @Table(name = "file_cache")
@@ -82,6 +86,7 @@ public class FileCache {
     public static final String FIND_SOURCE_AETS_OF_SERIES = "FileCache.findSourceAETsOfSeries";
     public static final String FIND_BY_FILESET_UID = "FileCache.findByFilesetUID";
     public static final String UPDATE_FILESET_UID = "FileCache.updateFilesetUID";
+    public static final String FIND_FILESET_UID_NOT_IN_FT = "FileCache.findFilesetUIDNotInForwardTask";
 
     @Id
     @GeneratedValue

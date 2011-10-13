@@ -59,13 +59,8 @@ import javax.persistence.PersistenceContext;
 
 import org.dcm4chee.proxy.persistence.FileCache;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
-import org.dcm4chee.proxy.persistence.QFileCache;
-import org.dcm4chee.proxy.persistence.QForwardTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.mysema.query.hql.HQLSubQuery;
-import com.mysema.query.jpa.impl.JPAQuery;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -117,6 +112,7 @@ public class FileCacheManagerBean implements FileCacheManager {
             .getResultList();
     }
 
+    @Override
     public List<FileCache> findByFilesetUID(String fsUID) {
         return em.createNamedQuery(FileCache.FIND_BY_FILESET_UID, FileCache.class)
             .setParameter(1, fsUID)
@@ -125,13 +121,8 @@ public class FileCacheManagerBean implements FileCacheManager {
     
     @Override
     public List<FileCache> findByFilesetUIDNotInForwardTask() {
-        QFileCache fileCache = QFileCache.fileCache;
-        QForwardTask forwardTask = QForwardTask.forwardTask;
-        JPAQuery query = new JPAQuery(em); 
-        return query.from(fileCache)
-                .where(fileCache.filesetUID.ne("-").and(fileCache.filesetUID.notIn(
-                        new HQLSubQuery().from(forwardTask).list(forwardTask.filesetUID))))
-                .list(fileCache);
+        return em.createNamedQuery(FileCache.FIND_FILESET_UID_NOT_IN_FT, FileCache.class)
+                .getResultList();
     }
 
     @Override
