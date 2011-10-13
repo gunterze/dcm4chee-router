@@ -41,10 +41,8 @@ package org.dcm4chee.proxy.beans.send;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.ResourceBundle;
 
 import javax.ejb.EJB;
 import javax.jms.JMSException;
@@ -70,13 +68,14 @@ import org.dcm4che.net.DataWriter;
 import org.dcm4che.net.DimseRSPHandler;
 import org.dcm4che.net.IncompatibleConnectionException;
 import org.dcm4che.net.InputStreamDataWriter;
+import org.dcm4che.net.Priority;
 import org.dcm4che.net.pdu.AAssociateRQ;
 import org.dcm4che.net.pdu.PresentationContext;
-import org.dcm4che.util.TagUtils;
 import org.dcm4chee.proxy.ejb.FileCacheManager;
 import org.dcm4chee.proxy.ejb.ForwardTaskManager;
 import org.dcm4chee.proxy.persistence.FileCache;
 import org.dcm4chee.proxy.persistence.ForwardTask;
+import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,9 +87,6 @@ public class ForwardTaskListener implements MessageListener {
     
     private static final Logger LOG =
         LoggerFactory.getLogger(ForwardTaskListener.class);
-    
-    private static ResourceBundle rb =
-        ResourceBundle.getBundle("org.dcm4che.tool.storescu.messages");
     
     @EJB
     private ForwardTaskManager forwardTaskMgr;
@@ -150,23 +146,32 @@ public class ForwardTaskListener implements MessageListener {
 
     @Override
     public void onMessage(Message message) {
+        ForwardTask ft = null;
         try {
-            ForwardTask ft =  (ForwardTask)((ObjectMessage)message).getObject();
+            ft = (ForwardTask)((ObjectMessage)message).getObject();
             Map<String, Connection> retrieveConnections =
                 (Map<String, Connection>) ae.getDevice().getProperty("Retrieve.connections");
             remote = retrieveConnections.get(ft.getDestinationAET());
             remote.setTlsProtocol(conn.getTlsProtocols());
             remote.setTlsCipherSuite(conn.getTlsCipherSuite());
             conn = ae.findCompatibelConnection(remote);
+            rq.setCalledAET(ft.getDestinationAET());
             List<FileCache> fileCacheList = fileCacheMgr.findByFilesetUID(ft.getFilesetUID());
             addPresentationContext(fileCacheList);
-            setPriority(0);
+            setPriority(Priority.NORMAL);
             open();
             sendFiles(fileCacheList);
             close();
             forwardTaskMgr.remove(ft.getPk());
         } catch (Exception e) {
             LOG.error(e.getMessage());
+            try {
+                close();
+            } catch (Exception closeError) {
+                LOG.error(closeError.getMessage());;
+            }
+            forwardTaskMgr.updateForwardTaskStatus(ForwardTaskStatus.FAILED, e.getMessage(), 
+                    ft.getPk());
         }
     }
     
@@ -179,9 +184,9 @@ public class ForwardTaskListener implements MessageListener {
 
             if (!rq.containsPresentationContextFor(cuid)) {
                 if (!ts.equals(UID.ImplicitVRLittleEndian))
-                    rq.addPresentationContext(new PresentationContext(rq
-                            .getNumberOfPresentationContexts() * 2 + 1, cuid,
-                            UID.ImplicitVRLittleEndian));
+                    rq.addPresentationContext(new PresentationContext(
+                            rq.getNumberOfPresentationContexts() * 2 + 1, 
+                            cuid, UID.ImplicitVRLittleEndian));
             }
             rq.addPresentationContext(new PresentationContext(
                     rq.getNumberOfPresentationContexts() * 2 + 1, cuid, ts));
@@ -196,8 +201,8 @@ public class ForwardTaskListener implements MessageListener {
     }
     
     public void sendFiles(List<FileCache> fileCacheList) throws IOException {
-        while (as.isReadyForDataTransfer()) {
-            for (FileCache fc : fileCacheList) {
+        for (FileCache fc : fileCacheList) {
+            if (as.isReadyForDataTransfer()) {
                 String fpath = fc.getFilePath();
                 long fmiEndPos = 0;
                 String cuid = fc.getSopClassUID();
@@ -206,9 +211,14 @@ public class ForwardTaskListener implements MessageListener {
                 try {
                     send(new File(fpath), fmiEndPos, cuid, iuid, ts);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOG.error(e.getMessage());
                 }
             }
+        }
+        try {
+            as.waitForOutstandingRSP();
+        } catch (InterruptedException e) {
+            LOG.error(e.getMessage());
         }
     }
     
@@ -242,13 +252,9 @@ public class ForwardTaskListener implements MessageListener {
         case 0xB007:
             totalSize += f.length();
             ++filesSent;
-            LOG.error(MessageFormat.format(rb.getString("warning"),
-                    TagUtils.shortToHexString(status), f));
             LOG.error(cmd.toString());
             break;
         default:
-            LOG.error(MessageFormat.format(rb.getString("error"), 
-                    TagUtils.shortToHexString(status), f));
             LOG.error(cmd.toString());
         }
     }

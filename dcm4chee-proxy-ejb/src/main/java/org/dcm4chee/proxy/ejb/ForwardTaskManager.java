@@ -42,6 +42,7 @@ import javax.ejb.Local;
 import javax.jms.JMSException;
 
 import org.dcm4chee.proxy.persistence.ForwardTask;
+import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
@@ -56,5 +57,7 @@ public interface ForwardTaskManager {
             String[] destinationAETs) throws JMSException;
 
     void remove(int pk);
+
+    int updateForwardTaskStatus(ForwardTaskStatus status, String error, int pk);
 
 }

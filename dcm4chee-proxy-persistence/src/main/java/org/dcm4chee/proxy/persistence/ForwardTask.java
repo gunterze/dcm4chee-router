@@ -45,16 +45,26 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
+@NamedQueries({
+    @NamedQuery(
+            name="ForwardTask.updateStatus",
+            query="UPDATE ForwardTask ft SET ft.forwardTaskStatus=?1, ft.errorCode=?2 "
+                + "WHERE ft.pk=?3"
+            )})
 @Entity
 @Table(name = "forward_task")
 public class ForwardTask implements Serializable{
     
     private static final long serialVersionUID = 5400645502128519891L;
+    
+    public static final String UPDATE_STATUS = "ForwardTask.updateStatus";
     
     @Id
     @GeneratedValue
