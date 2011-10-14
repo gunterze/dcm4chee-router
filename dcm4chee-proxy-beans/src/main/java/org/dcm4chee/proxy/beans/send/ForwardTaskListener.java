@@ -61,6 +61,7 @@ import javax.naming.NamingException;
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Tag;
 import org.dcm4che.data.UID;
+import org.dcm4che.io.DicomInputStream;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Association;
 import org.dcm4che.net.Connection;
@@ -204,12 +205,11 @@ public class ForwardTaskListener implements MessageListener {
         for (FileCache fc : fileCacheList) {
             if (as.isReadyForDataTransfer()) {
                 String fpath = fc.getFilePath();
-                long fmiEndPos = 0;
                 String cuid = fc.getSopClassUID();
                 String iuid = fc.getSopInstanceUID();
                 String ts = fc.getTransferSyntaxUID();
                 try {
-                    send(new File(fpath), fmiEndPos, cuid, iuid, ts);
+                    send(new File(fpath), cuid, iuid, ts);
                 } catch (Exception e) {
                     LOG.error(e.getMessage());
                 }
@@ -222,21 +222,18 @@ public class ForwardTaskListener implements MessageListener {
         }
     }
     
-    public void send(final File f, long fmiEndPos, String cuid, String iuid,
+    public void send(final File f, String cuid, String iuid,
             String ts) throws IOException, InterruptedException {
-        FileInputStream in = new FileInputStream(f);
-        in.skip(fmiEndPos);
+        DicomInputStream in = new DicomInputStream(f);
+        Attributes attrs = in.readFileMetaInformation();
         DataWriter data = new InputStreamDataWriter(in);
-
         DimseRSPHandler rspHandler = new DimseRSPHandler(as.nextMessageID()) {
-
             @Override
             public void onDimseRSP(Association as, Attributes cmd, Attributes data) {
                 super.onDimseRSP(as, cmd, data);
                 onCStoreRSP(cmd, f);
             }
         };
-
         as.cstore(cuid, iuid, priority, data , ts, rspHandler);
     }
     
