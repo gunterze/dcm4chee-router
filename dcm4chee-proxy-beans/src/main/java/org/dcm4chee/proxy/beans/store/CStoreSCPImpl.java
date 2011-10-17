@@ -82,7 +82,7 @@ public class CStoreSCPImpl extends BasicCStoreSCP {
             return File.createTempFile("dcm", ".dcm", tmpDir);
         } catch (Exception e) {
             LOG.warn(as + ": Failed to create temp file:", e);
-            throw new DicomServiceException(rq, Status.OutOfResources, e);
+            throw new DicomServiceException(Status.OutOfResources, e);
         }
     }
 
@@ -101,8 +101,8 @@ public class CStoreSCPImpl extends BasicCStoreSCP {
         try {
             cacheMgr.persist(fc);
         } catch (Exception e) {
-            throw new DicomServiceException(rq,
-                    Status.OutOfResources, causeOf(e));
+            throw new DicomServiceException(Status.ProcessingFailure,
+                    DicomServiceException.initialCauseOf(e));
         }
         return null;
     }
@@ -116,16 +116,9 @@ public class CStoreSCPImpl extends BasicCStoreSCP {
             return in.readDataset(-1, Tag.PixelData);
         } catch (IOException e) {
             LOG.warn(as + ": Failed to decode dataset:", e);
-            throw new DicomServiceException(rq, Status.CannotUnderstand);
+            throw new DicomServiceException(Status.CannotUnderstand, e);
         } finally {
             SafeClose.close(in);
         }
-    }
-
-    private static Throwable causeOf(Throwable e) {
-        Throwable cause;
-        while ((cause = e.getCause()) != null && e != cause)
-            e = cause;
-        return e;
     }
 }
