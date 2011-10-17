@@ -96,6 +96,15 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
         }
     }
     
+    @Override
+    public int updateForwardTaskStatus(ForwardTaskStatus status, String error, int pk) {
+        return em.createNamedQuery(ForwardTask.UPDATE_STATUS)
+            .setParameter(1, status)
+            .setParameter(2, error)
+            .setParameter(3, pk)
+            .executeUpdate();
+    }
+    
     private void sendStoreSCPMessage(ForwardTask ft) throws JMSException {
         QueueConnection qcon = qconFactory.createQueueConnection();
         QueueSession qsession = qcon.createQueueSession(false, 0);
