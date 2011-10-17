@@ -22,6 +22,7 @@
    -
    - Contributor(s):
    - Gunter Zeilinger <gunterze@gmail.com>
+   - Michael Backhaus <michael.backhaus@agfa.com>
    -
    - Alternatively, the contents of this file may be used under the terms of
    - either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -51,6 +52,23 @@
       factoryMethod="newSingleThreadScheduledExecutor" />
   </bean>
 
+  <bean name="SAXTranformerFactory" class="javax.xml.transform.sax.SAXTransformerFactory">
+    <constructor factoryClass="javax.xml.transform.sax.SAXTransformerFactory"
+        factoryMethod="newInstance" />
+  </bean>
+
+  <bean name="NullifyPN" class="javax.xml.transform.Templates">
+    <constructor factoryMethod="newTemplates">
+      <factory bean="SAXTranformerFactory"/>
+      <parameter>
+        <bean class="javax.xml.transform.stream.StreamSource">
+          <constructor>
+            <parameter class="java.lang.String">resource:dcm4chee-arc-nullify-pn.xsl</parameter>
+          </constructor>
+        </bean>
+      </parameter>
+    </constructor>
+  </bean>
 
   <!-- The DICOM Device -->
   <bean name="Device" class="org.dcm4che.net.Device">
@@ -137,6 +155,16 @@
         <javabean xmlns="urn:jboss:javabean:2.0" class="java.lang.Integer">
           <constructor>
             <property name="anInteger">20</property><!-- time in seconds -->
+          </constructor>
+        </javabean>
+      </parameter>
+    </install>
+    <install method="setProperty">
+      <parameter>Send.rescheduleInterval</parameter>
+      <parameter>
+        <javabean xmlns="urn:jboss:javabean:2.0" class="java.lang.Integer">
+          <constructor>
+            <property name="anInteger">600</property><!-- time in seconds -->
           </constructor>
         </javabean>
       </parameter>
