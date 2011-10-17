@@ -39,10 +39,10 @@
 package org.dcm4chee.proxy.beans.send;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.ejb.EJB;
 import javax.jms.JMSException;
@@ -53,6 +53,7 @@ import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.jms.QueueReceiver;
+import javax.jms.QueueSender;
 import javax.jms.QueueSession;
 import javax.jms.Session;
 import javax.naming.InitialContext;
@@ -162,18 +163,42 @@ public class ForwardTaskListener implements MessageListener {
             setPriority(Priority.NORMAL);
             open();
             sendFiles(fileCacheList);
-            close();
+            forwardTaskMgr.remove(ft.getPk());
+        } catch (IncompatibleConnectionException e) {
+            LOG.error(e.getMessage());
             forwardTaskMgr.remove(ft.getPk());
         } catch (Exception e) {
             LOG.error(e.getMessage());
+            forwardTaskMgr.updateForwardTaskStatus(ForwardTaskStatus.FAILED, e.getMessage(), 
+                    ft.getPk());
+            final ForwardTask fft = ft;
+            ae.getDevice().schedule(rescheduleForwardTask(fft),
+                    (Long) ae.getDevice().getProperty("Send.rescheduleInterval"), TimeUnit.SECONDS);
+        } finally {
             try {
                 close();
             } catch (Exception closeError) {
                 LOG.error(closeError.getMessage());;
             }
-            forwardTaskMgr.updateForwardTaskStatus(ForwardTaskStatus.FAILED, e.getMessage(), 
-                    ft.getPk());
         }
+    }
+    
+    private Runnable rescheduleForwardTask(final ForwardTask ft) {
+        Runnable scheduledMessage = new Runnable() {
+            
+            @Override
+            public void run() {
+                try {
+                    QueueSender qsender = qsession.createSender(queue);
+                    ObjectMessage message = qsession.createObjectMessage(ft);
+                    qsender.send(message);
+                    qsender.close();
+                } catch (JMSException e) {
+                    LOG.error(e.getMessage());
+                }
+            }
+        };
+        return scheduledMessage;
     }
     
     private void addPresentationContext(List<FileCache> fileCacheList) throws IOException {
