@@ -57,6 +57,7 @@ import javax.jms.JMSException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import org.dcm4che.net.Connection;
 import org.dcm4chee.proxy.persistence.FileCache;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 import org.slf4j.Logger;
@@ -164,7 +165,7 @@ public class FileCacheManagerBean implements FileCacheManager {
             List<String> sourceAETs = findSourceAETsOfSeries(seriesIUID);
             for (String sourceAET : sourceAETs) {
                 Map<String, String[]> forwardRules =
-                        (Map<String, String[]>) device.getDevice().getProperty("ForwardRules");
+                        (Map<String, String[]>) device.getDevice().getProperty("Forward.rules");
                 String[] destinationAETs = forwardRules.get(sourceAET);
                 if (destinationAETs.length > 0)
                     forwardTaskMgr.scheduleForwardTask(seriesIUID, sourceAET, destinationAETs);

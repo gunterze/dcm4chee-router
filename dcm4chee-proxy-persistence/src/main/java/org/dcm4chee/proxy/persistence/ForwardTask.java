@@ -53,11 +53,10 @@ import javax.persistence.Table;
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
 @NamedQueries({
-    @NamedQuery(
-            name="ForwardTask.updateStatus",
-            query="UPDATE ForwardTask ft SET ft.forwardTaskStatus=?1, ft.errorCode=?2 "
-                + "WHERE ft.pk=?3"
-            )})
+    @NamedQuery(name="ForwardTask.updateStatus",
+            query="UPDATE ForwardTask ft SET ft.forwardTaskStatus=?1, ft.errorCode=?2 " +
+                  "WHERE ft.pk=?3")
+})
 @Entity
 @Table(name = "forward_task")
 public class ForwardTask implements Serializable{

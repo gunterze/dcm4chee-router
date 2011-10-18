@@ -58,21 +58,28 @@ import javax.jms.QueueSession;
 import javax.jms.Session;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.xml.transform.Templates;
 
 import org.dcm4che.data.Attributes;
 import org.dcm4che.data.Tag;
 import org.dcm4che.data.UID;
 import org.dcm4che.io.DicomInputStream;
+import org.dcm4che.io.SAXTransformer;
+import org.dcm4che.io.SAXWriter;
 import org.dcm4che.net.ApplicationEntity;
 import org.dcm4che.net.Association;
 import org.dcm4che.net.Connection;
 import org.dcm4che.net.DataWriter;
+import org.dcm4che.net.DataWriterAdapter;
 import org.dcm4che.net.DimseRSPHandler;
 import org.dcm4che.net.IncompatibleConnectionException;
 import org.dcm4che.net.InputStreamDataWriter;
+import org.dcm4che.net.NoPresentationContextException;
 import org.dcm4che.net.Priority;
 import org.dcm4che.net.pdu.AAssociateRQ;
 import org.dcm4che.net.pdu.PresentationContext;
+import org.dcm4che.net.service.InstanceLocator;
+import org.dcm4che.util.SafeClose;
 import org.dcm4chee.proxy.ejb.FileCacheManager;
 import org.dcm4chee.proxy.ejb.ForwardTaskManager;
 import org.dcm4chee.proxy.persistence.FileCache;
@@ -107,6 +114,7 @@ public class ForwardTaskListener implements MessageListener {
     private Association as;
     private ApplicationEntity ae;
     private int priority;
+    private List<FileCache> fileCacheList;
     
     private long totalSize;
     private int filesSent;
@@ -151,19 +159,18 @@ public class ForwardTaskListener implements MessageListener {
         ForwardTask ft = null;
         try {
             ft = (ForwardTask)((ObjectMessage)message).getObject();
-            Map<String, Connection> retrieveConnections =
-                (Map<String, Connection>) ae.getDevice().getProperty("Retrieve.connections");
-            remote = retrieveConnections.get(ft.getDestinationAET());
+            Map<String, Connection> forwardConnections =
+                (Map<String, Connection>) ae.getDevice().getProperty("Forward.connections");
+            remote = forwardConnections.get(ft.getDestinationAET());
             remote.setTlsProtocol(conn.getTlsProtocols());
             remote.setTlsCipherSuite(conn.getTlsCipherSuite());
             conn = ae.findCompatibelConnection(remote);
             rq.setCalledAET(ft.getDestinationAET());
-            List<FileCache> fileCacheList = fileCacheMgr.findByFilesetUID(ft.getFilesetUID());
-            addPresentationContext(fileCacheList);
+            fileCacheList = fileCacheMgr.findByFilesetUID(ft.getFilesetUID());
+            addPresentationContext();
             setPriority(Priority.NORMAL);
             open();
-            sendFiles(fileCacheList);
-            forwardTaskMgr.remove(ft.getPk());
+            sendFiles(ft);
         } catch (IncompatibleConnectionException e) {
             LOG.error(e.getMessage());
             forwardTaskMgr.remove(ft.getPk());
@@ -171,9 +178,7 @@ public class ForwardTaskListener implements MessageListener {
             LOG.error(e.getMessage());
             forwardTaskMgr.updateForwardTaskStatus(ForwardTaskStatus.FAILED, e.getMessage(), 
                     ft.getPk());
-            final ForwardTask fft = ft;
-            ae.getDevice().schedule(rescheduleForwardTask(fft),
-                    (Long) ae.getDevice().getProperty("Send.rescheduleInterval"), TimeUnit.SECONDS);
+            reschedule(ft);
         } finally {
             try {
                 close();
@@ -183,8 +188,16 @@ public class ForwardTaskListener implements MessageListener {
         }
     }
     
+    private void reschedule(ForwardTask ft) {
+        final ForwardTask fft = ft;
+        ae.getDevice().schedule(rescheduleForwardTask(fft),
+                (Integer) ae.getDevice().getProperty("Send.rescheduleInterval"),
+                TimeUnit.SECONDS);
+    }
+
     private Runnable rescheduleForwardTask(final ForwardTask ft) {
-        Runnable scheduledMessage = new Runnable() {
+        LOG.info("Rescheduling file set " + ft.getFilesetUID());
+        return new Runnable() {
             
             @Override
             public void run() {
@@ -198,10 +211,9 @@ public class ForwardTaskListener implements MessageListener {
                 }
             }
         };
-        return scheduledMessage;
     }
     
-    private void addPresentationContext(List<FileCache> fileCacheList) throws IOException {
+    private void addPresentationContext() throws IOException {
         for (FileCache fc : fileCacheList) {
             String cuid = fc.getSopClassUID();
             String ts = fc.getTransferSyntaxUID();
@@ -226,32 +238,42 @@ public class ForwardTaskListener implements MessageListener {
         as = ae.connect(conn, remote, rq);
     }
     
-    public void sendFiles(List<FileCache> fileCacheList) throws IOException {
-        for (FileCache fc : fileCacheList) {
-            if (as.isReadyForDataTransfer()) {
-                String fpath = fc.getFilePath();
-                String cuid = fc.getSopClassUID();
-                String iuid = fc.getSopInstanceUID();
-                String ts = fc.getTransferSyntaxUID();
-                try {
-                    send(new File(fpath), cuid, iuid, ts);
-                } catch (Exception e) {
-                    LOG.error(e.getMessage());
+    public void sendFiles(ForwardTask ft) throws IOException {
+        try {
+            Map<String, Templates> map = (Map<String, Templates>) ae.getProperty("Retrieve.coercions");
+            Templates templates = map.get(ft.getDestinationAET());
+            for (FileCache fc : fileCacheList) {
+                if (as.isReadyForDataTransfer()) {
+                    String fpath = fc.getFilePath();
+                    String cuid = fc.getSopClassUID();
+                    String iuid = fc.getSopInstanceUID();
+                    String ts = fc.getTransferSyntaxUID();
+                    try {
+                        send(new File(fpath), cuid, iuid, ts, templates);
+                    } catch (NoPresentationContextException e) {
+                        LOG.error(e.getMessage());
+                    }
                 }
             }
-        }
-        try {
-            as.waitForOutstandingRSP();
-        } catch (InterruptedException e) {
+            forwardTaskMgr.remove(ft.getPk());
+        } catch (Exception e) {
             LOG.error(e.getMessage());
+            forwardTaskMgr.updateForwardTaskStatus(ForwardTaskStatus.FAILED, e.getMessage(), 
+                    ft.getPk());
+            reschedule(ft);
+            try {
+                as.waitForOutstandingRSP();
+            } catch (InterruptedException ie) {
+                LOG.error(ie.getMessage());
+            }
         }
     }
     
     public void send(final File f, String cuid, String iuid,
-            String ts) throws IOException, InterruptedException {
+            String ts, Templates templates) throws IOException, InterruptedException {
         DicomInputStream in = new DicomInputStream(f);
         Attributes attrs = in.readFileMetaInformation();
-        DataWriter data = new InputStreamDataWriter(in);
+        DataWriter data = createDataWriter(f, templates);
         DimseRSPHandler rspHandler = new DimseRSPHandler(as.nextMessageID()) {
             @Override
             public void onDimseRSP(Association as, Attributes cmd, Attributes data) {
@@ -284,5 +306,30 @@ public class ForwardTaskListener implements MessageListener {
     public void close() throws IOException, InterruptedException {
         if (as != null && as.isReadyForDataTransfer())
             as.release();
+    }
+    
+    protected DataWriter createDataWriter(File file, Templates templates)
+    throws IOException {
+        Attributes attrs;
+        DicomInputStream in = new DicomInputStream(file);
+        try {
+            in.setIncludeBulkDataLocator(true);
+            attrs = in.readDataset(-1, -1);
+        } finally {
+            SafeClose.close(in);
+        }
+        
+        if (templates != null) {
+            Attributes modify = new Attributes();
+            try {
+                SAXWriter w = SAXTransformer.getSAXWriter(templates, modify);
+                w.setIncludeKeyword(false);
+                w.write(attrs);
+            } catch (Exception e) {
+                new IOException(e);
+            }
+            attrs.addAll(modify);
+        }
+        return new DataWriterAdapter(attrs);
     }
 }
