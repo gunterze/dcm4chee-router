@@ -63,7 +63,20 @@
       <parameter>
         <bean class="javax.xml.transform.stream.StreamSource">
           <constructor>
-            <parameter class="java.lang.String">resource:dcm4chee-arc-nullify-pn.xsl</parameter>
+            <parameter class="java.lang.String">resource:dcm4chee-proxy-nullify-pn.xsl</parameter>
+          </constructor>
+        </bean>
+      </parameter>
+    </constructor>
+  </bean>
+  
+    <bean name="ForwardRules" class="javax.xml.transform.Templates">
+    <constructor factoryMethod="newTemplates">
+      <factory bean="SAXTranformerFactory"/>
+      <parameter>
+        <bean class="javax.xml.transform.stream.StreamSource">
+          <constructor>
+            <parameter class="java.lang.String">resource:dcm4chee-proxy-forward-rules.xsl</parameter>
           </constructor>
         </bean>
       </parameter>
@@ -140,7 +153,7 @@
       </parameter>
     </install>
     <install method="setProperty">
-      <parameter>checkForNewReceivedSeriesInterval</parameter>
+      <parameter>Interval.checkForNewReceivedSeries</parameter>
       <parameter>
         <javabean xmlns="urn:jboss:javabean:2.0" class="java.lang.Integer">
           <constructor>
@@ -150,7 +163,7 @@
       </parameter>
     </install>
     <install method="setProperty">
-      <parameter>clearFileCacheInterval</parameter>
+      <parameter>Interval.clearFileCache</parameter>
       <parameter>
         <javabean xmlns="urn:jboss:javabean:2.0" class="java.lang.Integer">
           <constructor>
@@ -160,36 +173,7 @@
       </parameter>
     </install>
     <install method="setProperty">
-      <parameter>Forward.schedule</parameter>
-      <parameter>
-        <map keyClass="java.lang.String" valueClass="org.dcm4che.net.Connection">
-          <entry>
-            <key>STORESCP</key>
-            <value>
-              <bean class="org.dcm4che.net.Connection">
-                <property name="hostname">localhost</property>
-                <property name="port">11113</property>
-              </bean>
-            </value>
-          </entry>
-          <entry>
-            <key>STORESCP_TLS</key>
-            <value>
-              <bean class="org.dcm4che.net.Connection">
-                <property name="hostname">localhost</property>
-                <property name="port">2762</property>
-                <property name="tlsCipherSuite">
-                  <array>
-                    <value>SSL_RSA_WITH_NULL_SHA</value>
-                    <value>TLS_RSA_WITH_AES_128_CBC_SHA</value>
-                    <value>TLS_RSA_WITH_3DES_EDE_CBC_SHA</value>
-                  </array>
-                </property>
-              </bean>
-            </value>
-          </entry>
-        </map>
-      </parameter>
+      <parameter>Interval.forwardSchedule</parameter>
       <parameter>
         <javabean xmlns="urn:jboss:javabean:2.0" class="java.lang.Integer">
           <constructor>
@@ -209,10 +193,13 @@
         </map>
       </parameter>
     </install>
+    <install method="setProperty">
+      <parameter>ForwardRules</parameter>
+      <parameter><inject bean="ForwardRules" /></parameter>
+    </install>
     <incallback method="addApplicationEntity" />
     <uncallback method="removeApplicationEntity" />
   </bean>
-
 
   <!-- The DICOM Connection -->
   <bean name="Connection" class="org.dcm4che.net.Connection">

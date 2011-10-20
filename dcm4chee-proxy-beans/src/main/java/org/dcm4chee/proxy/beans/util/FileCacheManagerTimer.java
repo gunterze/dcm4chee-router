@@ -39,6 +39,7 @@
 package org.dcm4chee.proxy.beans.util;
 
 import javax.ejb.EJB;
+import javax.ejb.Timer;
 
 import org.dcm4chee.proxy.ejb.FileCacheManager;
 
@@ -48,14 +49,16 @@ import org.dcm4chee.proxy.ejb.FileCacheManager;
  */
 public class FileCacheManagerTimer {
     
+    private Timer timer;
+    
     @EJB
     private FileCacheManager fileCacheMgr;
     
     public void init() {
-        fileCacheMgr.initTimer();
+        timer = fileCacheMgr.initTimer();
     }
     
     public void cancel() {
-        fileCacheMgr.cancelTimer();
+        timer.cancel();
     }
 }

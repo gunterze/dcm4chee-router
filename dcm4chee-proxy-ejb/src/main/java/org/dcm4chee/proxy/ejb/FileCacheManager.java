@@ -41,6 +41,7 @@ package org.dcm4chee.proxy.ejb;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.ejb.Timer;
 
 import org.dcm4chee.proxy.persistence.FileCache;
 
@@ -55,9 +56,7 @@ public interface FileCacheManager {
 
     int setFilesetUID(String fsUID, String seriesIUID, String sourceAET);
 
-    void initTimer();
-
-    void cancelTimer();
+    Timer initTimer();
 
     List<FileCache> findByFilesetUIDNotInForwardTask();
 

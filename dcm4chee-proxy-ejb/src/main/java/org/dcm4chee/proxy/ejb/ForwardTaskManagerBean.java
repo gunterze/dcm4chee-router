@@ -38,6 +38,8 @@
 
 package org.dcm4chee.proxy.ejb;
 
+import java.util.List;
+
 import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
@@ -86,11 +88,12 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     }
     
     @Override
-    public void scheduleForwardTask(String seriesIUID, String sourceAET, String[] destinationAETs) 
-        throws JMSException {
+    public void scheduleForwardTask(String seriesIUID, String sourceAET, 
+            List<String> destinationAETs) throws JMSException {
         String fsUID = UIDUtils.createUID();
         fileCacheMgr.setFilesetUID(fsUID, seriesIUID, sourceAET);
         for (String destinationAET : destinationAETs) {
+            //TODO: get destination parameters
             ForwardTask ft = storeForwardTask(fsUID, destinationAET);
             sendStoreSCPMessage(ft);
         }

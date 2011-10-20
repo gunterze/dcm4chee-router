@@ -38,10 +38,12 @@
 
 package org.dcm4chee.proxy.ejb;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Resource;
 import javax.ejb.EJB;
@@ -56,12 +58,25 @@ import javax.ejb.TransactionAttributeType;
 import javax.jms.JMSException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXResult;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
 
-import org.dcm4che.net.Connection;
+import org.dcm4che.data.Tag;
+import org.dcm4che.io.DicomInputStream;
+import org.dcm4che.io.SAXWriter;
+import org.dcm4che.util.SafeClose;
 import org.dcm4chee.proxy.persistence.FileCache;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -73,9 +88,6 @@ public class FileCacheManagerBean implements FileCacheManager {
     private static final Logger LOG =
         LoggerFactory.getLogger(ForwardTaskStatus.class);
 
-    private int timerInterval;
-    private Timer timer;
-    
     @EJB
     private ForwardTaskManager forwardTaskMgr;
     
@@ -137,41 +149,72 @@ public class FileCacheManagerBean implements FileCacheManager {
     }
     
     @Override
-    public void initTimer(){
+    public Timer initTimer(){
         TimerConfig timerConfig = new TimerConfig();
         timerConfig.setPersistent(false);
         ScheduleExpression schedule = new ScheduleExpression();
-        timerInterval = (Integer) device.getDevice().getProperty("checkForNewReceivedSeriesInterval")*1000;
+        int timerInterval = (Integer) device.getDevice()
+                .getProperty("Interval.checkForNewReceivedSeries")*1000;
         schedule.second(timerInterval);
-        LOG.info("Creating checkForNewReceivedSeriesTimer with " + timerInterval/1000 + " seconds interval");
-        timer = timerService.createIntervalTimer(timerInterval, timerInterval, timerConfig);
+        LOG.info("Creating checkForNewReceivedSeriesTimer with " + timerInterval/1000 
+                + " seconds interval");
+        return timerService.createIntervalTimer(timerInterval, timerInterval, timerConfig);
     }
     
-    @Override
-    public void cancelTimer() {
-        LOG.info("Canceling timer");
-        timer.cancel();
-    }
 
-    @SuppressWarnings("unchecked")
     @Timeout
     @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-    public void checkForNewReceivedSeries() throws JMSException {
+    public void checkForNewReceivedSeries() throws JMSException, TransformerException, IOException {
         Calendar interval = Calendar.getInstance();
-        interval.add(Calendar.MINUTE, -timerInterval);
-        List<String> newSeriesList =
-                findSeriesReceivedBefore(interval.getTime());
-        for (String seriesIUID : newSeriesList) {
-            List<String> sourceAETs = findSourceAETsOfSeries(seriesIUID);
-            for (String sourceAET : sourceAETs) {
-                Map<String, String[]> forwardRules =
-                        (Map<String, String[]>) device.getDevice().getProperty("Forward.rules");
-                String[] destinationAETs = forwardRules.get(sourceAET);
-                if (destinationAETs.length > 0)
-                    forwardTaskMgr.scheduleForwardTask(seriesIUID, sourceAET, destinationAETs);
-                else
-                    LOG.error("No destination AETs defined for " + sourceAET);
+        int timerInterval = (Integer) device.getDevice()
+                .getProperty("Interval.checkForNewReceivedSeries");
+        interval.add(Calendar.SECOND, -timerInterval);
+        List<String> newSeriesList = findSeriesReceivedBefore(interval.getTime());
+        if (!newSeriesList.isEmpty()){
+            SAXTransformerFactory transFac = (SAXTransformerFactory) TransformerFactory.newInstance();
+            TransformerHandler handler = transFac.newTransformerHandler(
+                    (Templates) device.getDevice().getProperty("ForwardRules"));
+            final ArrayList<String> destinationAETs = new ArrayList<String>();
+            handler.setResult(new SAXResult(new DefaultHandler(){
+                @Override
+                public void startElement(String uri, String localName, String qName, Attributes attributes)
+                        throws SAXException {
+                    if (qName.equals("Destination"))
+                        destinationAETs.add(attributes.getValue("aet"));
+                }
+            }));
+            Transformer trans = handler.getTransformer();
+            for (String seriesIUID : newSeriesList) {
+                List<String> sourceAETs = findSourceAETsOfSeries(seriesIUID);
+                for (String sourceAET : sourceAETs) {
+                    getDestinationParameters(handler, trans, seriesIUID, sourceAET);
+                    if (!destinationAETs.isEmpty())
+                        forwardTaskMgr.scheduleForwardTask(seriesIUID, sourceAET, destinationAETs);
+                    else
+                        LOG.error("No destination AETs defined for " + sourceAET);
+                }
             }
+        }
+    }
+
+    private void getDestinationParameters(TransformerHandler handler, Transformer trans,
+            String seriesIUID, String sourceAET) throws IOException {
+        trans.setParameter("sourceAET", sourceAET);
+        List<FileCache> fcl =
+                em.createNamedQuery(FileCache.FIND_BY_SERIES_UID, FileCache.class)
+                        .setParameter(1, seriesIUID)
+                        .setMaxResults(1)
+                        .getResultList();
+        DicomInputStream dis = new DicomInputStream(
+                new File(((FileCache)fcl.get(0)).getFilePath()));
+        try {
+            dis.setIncludeBulkData(false);
+            SAXWriter writer = new SAXWriter(handler);
+//            writer.setIncludeKeyword(false);
+            dis.setDicomInputHandler(writer);
+            dis.readDataset(-1, Tag.PixelData);
+        } finally {
+            SafeClose.close(dis);
         }
     }
 }

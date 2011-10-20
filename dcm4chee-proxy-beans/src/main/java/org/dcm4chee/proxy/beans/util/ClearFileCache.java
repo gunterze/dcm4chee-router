@@ -85,8 +85,10 @@ public class ClearFileCache {
             for (FileCache fileCache : fileCacheList) {
                 File file = new File(fileCache.getFilePath());
                 try {
-                    if (file.delete())
+                    if (file.delete()) {
+                        LOG.info("Deleted " + file);
                         fileCacheMgr.remove(fileCache.getPk());
+                    }
                     else
                         LOG.error("Error deleting " + file);
                 } catch (RuntimeException e) {
@@ -97,7 +99,7 @@ public class ClearFileCache {
     }
     
     public void startClearFileCacheRSP() {
-        int timerInterval = (Integer) device.getProperty("clearFileCacheInterval");
+        int timerInterval = (Integer) device.getProperty("Interval.clearFileCache");
         clearFileCacheRSP = device.scheduleAtFixedRate(new RemoveUnknownDestinationData(),
                 timerInterval, timerInterval, TimeUnit.SECONDS);
         LOG.info("Started clearFileCacheRSP with " + timerInterval + " seconds interval");

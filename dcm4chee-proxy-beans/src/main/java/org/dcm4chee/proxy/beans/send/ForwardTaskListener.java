@@ -73,12 +73,10 @@ import org.dcm4che.net.DataWriter;
 import org.dcm4che.net.DataWriterAdapter;
 import org.dcm4che.net.DimseRSPHandler;
 import org.dcm4che.net.IncompatibleConnectionException;
-import org.dcm4che.net.InputStreamDataWriter;
 import org.dcm4che.net.NoPresentationContextException;
 import org.dcm4che.net.Priority;
 import org.dcm4che.net.pdu.AAssociateRQ;
 import org.dcm4che.net.pdu.PresentationContext;
-import org.dcm4che.net.service.InstanceLocator;
 import org.dcm4che.util.SafeClose;
 import org.dcm4chee.proxy.ejb.FileCacheManager;
 import org.dcm4chee.proxy.ejb.ForwardTaskManager;
@@ -115,6 +113,7 @@ public class ForwardTaskListener implements MessageListener {
     private ApplicationEntity ae;
     private int priority;
     private List<FileCache> fileCacheList;
+    private Templates templates;
     
     private long totalSize;
     private int filesSent;
@@ -191,8 +190,9 @@ public class ForwardTaskListener implements MessageListener {
     private void reschedule(ForwardTask ft) {
         final ForwardTask fft = ft;
         ae.getDevice().schedule(rescheduleForwardTask(fft),
-                (Integer) ae.getDevice().getProperty("Send.rescheduleInterval"),
+                (Integer) ae.getDevice().getProperty("Interval.forwardSchedule"),
                 TimeUnit.SECONDS);
+        //TODO: get schedule from ft
     }
 
     private Runnable rescheduleForwardTask(final ForwardTask ft) {
@@ -238,10 +238,11 @@ public class ForwardTaskListener implements MessageListener {
         as = ae.connect(conn, remote, rq);
     }
     
+    @SuppressWarnings("unchecked")
     public void sendFiles(ForwardTask ft) throws IOException {
         try {
             Map<String, Templates> map = (Map<String, Templates>) ae.getProperty("Retrieve.coercions");
-            Templates templates = map.get(ft.getDestinationAET());
+            templates = map.get(ft.getDestinationAET());
             for (FileCache fc : fileCacheList) {
                 if (as.isReadyForDataTransfer()) {
                     String fpath = fc.getFilePath();
@@ -249,7 +250,7 @@ public class ForwardTaskListener implements MessageListener {
                     String iuid = fc.getSopInstanceUID();
                     String ts = fc.getTransferSyntaxUID();
                     try {
-                        send(new File(fpath), cuid, iuid, ts, templates);
+                        send(new File(fpath), cuid, iuid, ts);
                     } catch (NoPresentationContextException e) {
                         LOG.error(e.getMessage());
                     }
@@ -270,10 +271,10 @@ public class ForwardTaskListener implements MessageListener {
     }
     
     public void send(final File f, String cuid, String iuid,
-            String ts, Templates templates) throws IOException, InterruptedException {
+            String ts) throws IOException, InterruptedException {
         DicomInputStream in = new DicomInputStream(f);
         Attributes attrs = in.readFileMetaInformation();
-        DataWriter data = createDataWriter(f, templates);
+        DataWriter data = createDataWriter(f);
         DimseRSPHandler rspHandler = new DimseRSPHandler(as.nextMessageID()) {
             @Override
             public void onDimseRSP(Association as, Attributes cmd, Attributes data) {
@@ -308,7 +309,7 @@ public class ForwardTaskListener implements MessageListener {
             as.release();
     }
     
-    protected DataWriter createDataWriter(File file, Templates templates)
+    protected DataWriter createDataWriter(File file)
     throws IOException {
         Attributes attrs;
         DicomInputStream in = new DicomInputStream(file);
