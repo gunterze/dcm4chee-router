@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -173,15 +174,18 @@ public class FileCacheManagerBean implements FileCacheManager {
         if (!newSeriesList.isEmpty()){
             SAXTransformerFactory transFac = (SAXTransformerFactory) TransformerFactory.newInstance();
             TransformerHandler handler = transFac.newTransformerHandler(
-                    (Templates) device.getDevice().getProperty("ForwardRules"));
-            final ArrayList<String> destinationAETs = new ArrayList<String>();
+                    (Templates) device.getDevice().getProperty("Forward.rules"));
+            final ArrayList<AESchedule> destinationAETs = new ArrayList<AESchedule>();
             handler.setResult(new SAXResult(new DefaultHandler(){
                 @Override
                 public void startElement(String uri, String localName, String qName, Attributes attributes)
                         throws SAXException {
-                    if (qName.equals("Destination"))
-                        destinationAETs.add(attributes.getValue("aet"));
-                }
+                    if (qName.equals("Destination")) {
+                        AESchedule aes = new AESchedule(attributes.getValue("aet"), 
+                                attributes.getValue("time"), attributes.getValue("day-of-week"));
+                        destinationAETs.add(aes);
+                        }
+                    }
             }));
             Transformer trans = handler.getTransformer();
             for (String seriesIUID : newSeriesList) {
@@ -216,5 +220,104 @@ public class FileCacheManagerBean implements FileCacheManager {
         } finally {
             SafeClose.close(dis);
         }
+    }
+    
+    public class AESchedule {
+        
+        private String AETitle;
+        private Date startTime;
+        private Date endTime;
+        private Integer startDay;
+        private Integer endDay;
+        
+        public AESchedule(String aet, String time, String weekdays){
+            AETitle = aet;
+            String[]times = time.split("-");
+            if (times.length == 2) {
+                startTime = dateFromHourMinSec(times[0]);
+                endTime = dateFromHourMinSec(times[1]);
+            }
+            String[]days = weekdays.split("-");
+            if (days.length == 2) {
+                startDay = intFromDayString(days[0]);
+                endDay = intFromDayString(days[1]);
+            }
+        }
+        
+        boolean isNowBetweenDateTime() {
+            final GregorianCalendar gc = new GregorianCalendar();
+            Date time = gc.getTime();
+            Integer day = gc.get(Calendar.DAY_OF_WEEK);
+            if (startTime.after(endTime))
+                return (time.after(startTime) || time.before(endTime)) && day>=startDay && day<=endDay;
+            return time.after(startTime) && time.before(endTime) && day>=startDay && day<=endDay;
+        }
+        
+        private Date dateFromHourMinSec(final String hhmmss) {
+            if (!hhmmss.matches("^[0-2][0-3]:[0-5][0-9]:[0-5][0-9]$")) {
+                LOG.error(hhmmss + " is not a valid time, expecting HH:MM:SS format");
+                return null;
+            }
+            
+            final String[] hms = hhmmss.split(":");
+            final GregorianCalendar gc = new GregorianCalendar();
+            gc.set(Calendar.HOUR_OF_DAY, Integer.parseInt(hms[0]));
+            gc.set(Calendar.MINUTE, Integer.parseInt(hms[1]));
+            gc.set(Calendar.SECOND, Integer.parseInt(hms[2]));
+            gc.set(Calendar.MILLISECOND, 0);
+            return gc.getTime();
+        }
+        
+        private Integer intFromDayString(final String day) {
+            String[] strDays = new String[] { "Sunday", "Monday", "Tuesday", "Wednesday", "Thusday",
+                    "Friday", "Saturday" };
+            for (int i=0; i < strDays.length; i++) {
+                if (day.equals(strDays[i])){
+                    return i;
+                }
+            }
+            return null;
+        }
+
+        public void setAETitle(String aETitle) {
+            AETitle = aETitle;
+        }
+
+        public String getAETitle() {
+            return AETitle;
+        }
+
+        public void setStartTime(Date startTime) {
+            this.startTime = startTime;
+        }
+
+        public Date getStartTime() {
+            return startTime;
+        }
+
+        public void setEndTime(Date endTime) {
+            this.endTime = endTime;
+        }
+
+        public Date getEndTime() {
+            return endTime;
+        }
+
+        public void setStartDay(Integer startDay) {
+            this.startDay = startDay;
+        }
+
+        public Integer getStartDay() {
+            return startDay;
+        }
+
+        public void setEndDay(Integer endDay) {
+            this.endDay = endDay;
+        }
+
+        public Integer getEndDay() {
+            return endDay;
+        }
+
     }
 }

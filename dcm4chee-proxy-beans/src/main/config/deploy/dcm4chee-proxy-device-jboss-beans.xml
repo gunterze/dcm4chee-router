@@ -70,7 +70,7 @@
     </constructor>
   </bean>
   
-    <bean name="ForwardRules" class="javax.xml.transform.Templates">
+  <bean name="ForwardRules" class="javax.xml.transform.Templates">
     <constructor factoryMethod="newTemplates">
       <factory bean="SAXTranformerFactory"/>
       <parameter>
@@ -173,16 +173,6 @@
       </parameter>
     </install>
     <install method="setProperty">
-      <parameter>Interval.forwardSchedule</parameter>
-      <parameter>
-        <javabean xmlns="urn:jboss:javabean:2.0" class="java.lang.Integer">
-          <constructor>
-            <property name="anInteger">600</property><!-- time in seconds -->
-          </constructor>
-        </javabean>
-      </parameter>
-    </install>
-    <install method="setProperty">
       <parameter>Retrieve.coercions</parameter>
       <parameter>
         <map keyClass="java.lang.String" valueClass="javax.xml.transform.Templates">
@@ -194,7 +184,7 @@
       </parameter>
     </install>
     <install method="setProperty">
-      <parameter>ForwardRules</parameter>
+      <parameter>Forward.rules</parameter>
       <parameter><inject bean="ForwardRules" /></parameter>
     </install>
     <incallback method="addApplicationEntity" />

@@ -54,6 +54,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import org.dcm4che.util.UIDUtils;
+import org.dcm4chee.proxy.ejb.FileCacheManagerBean.AESchedule;
 import org.dcm4chee.proxy.persistence.ForwardTask;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 
@@ -89,12 +90,12 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
     
     @Override
     public void scheduleForwardTask(String seriesIUID, String sourceAET, 
-            List<String> destinationAETs) throws JMSException {
+            List<AESchedule> destinationAETs) throws JMSException {
         String fsUID = UIDUtils.createUID();
         fileCacheMgr.setFilesetUID(fsUID, seriesIUID, sourceAET);
-        for (String destinationAET : destinationAETs) {
-            //TODO: get destination parameters
-            ForwardTask ft = storeForwardTask(fsUID, destinationAET);
+        for (AESchedule destinationAET : destinationAETs) {
+            ForwardTask ft = storeForwardTask(fsUID, destinationAET.getAETitle());
+            //TODO: get destination dateTime parameters
             sendStoreSCPMessage(ft);
         }
     }

@@ -190,9 +190,8 @@ public class ForwardTaskListener implements MessageListener {
     private void reschedule(ForwardTask ft) {
         final ForwardTask fft = ft;
         ae.getDevice().schedule(rescheduleForwardTask(fft),
-                (Integer) ae.getDevice().getProperty("Interval.forwardSchedule"),
-                TimeUnit.SECONDS);
-        //TODO: get schedule from ft
+                (Integer) ae.getDevice().getProperty("Interval.forwardSchedule"), TimeUnit.SECONDS);
+        //TODO: get schedule interval from aet or destination rules
     }
 
     private Runnable rescheduleForwardTask(final ForwardTask ft) {
