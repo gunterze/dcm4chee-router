@@ -38,64 +38,44 @@
 
 package org.dcm4chee.proxy.persistence;
 
-import java.io.Serializable;
-
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
  */
-@NamedQueries({
-    @NamedQuery(name="ForwardTask.updateStatus",
-            query="UPDATE ForwardTask ft SET ft.forwardTaskStatus=?1, ft.errorCode=?2 " +
-                  "WHERE ft.pk=?3"),
-    @NamedQuery(name="ForwardTask.findByStatus",
-            query="SELECT f from ForwardTask f WHERE f.forwardTaskStatus=?1")
-})
 @Entity
-@Table(name = "forward_task")
-public class ForwardTask implements Serializable{
-    
-    private static final long serialVersionUID = 5400645502128519891L;
-    
-    public static final String UPDATE_STATUS = "ForwardTask.updateStatus";
-    public static final String FIND_BY_STATUS_CODE = "ForwardTask.findByStatus";
+@Table(name="audit_log")
+public class AuditLog {
     
     @Id
     @GeneratedValue
     @Column(name = "pk")
     private int pk;
-
+    
     @Basic(optional = false)
-    @Column(name = "source_aet")
+    @Column(name = "src_aet", updatable = false)
     private String sourceAET;
     
     @Basic(optional = false)
-    @Column(name = "destination_aet")
+    @Column(name = "dest_aet", updatable = false)
     private String destinationAET;
-    
-    @Basic(optional = false)
-    @Column(name = "fileset_uid")
-    private String filesetUID;
-    
+
     @Basic(optional = false)
     @Column(name = "series_iuid", updatable = false)
     private String seriesInstanceUID;
     
     @Basic(optional = false)
-    @Column(name= "forwardtask_status")
-    private ForwardTaskStatus forwardTaskStatus;
+    @Column(name = "files_send", updatable = false)
+    private Long filesSend;
     
-    @Basic(optional = true)
-    @Column(name = "error_code")
-    private String errorCode;
+    @Basic(optional = false)
+    @Column(name = "transfer_time", updatable = false)
+    private Long transferTime;
 
     public void setPk(int pk) {
         this.pk = pk;
@@ -105,32 +85,16 @@ public class ForwardTask implements Serializable{
         return pk;
     }
 
-    public void setFilesetUID(String filesetUID) {
-        this.filesetUID = filesetUID;
+    public void setSourceAET(String sourceAET) {
+        this.sourceAET = sourceAET;
     }
 
-    public String getFilesetUID() {
-        return filesetUID;
+    public String getSourceAET() {
+        return sourceAET;
     }
 
-    public void setForwardTaskStatus(ForwardTaskStatus status) {
-        this.forwardTaskStatus = status;
-    }
-
-    public ForwardTaskStatus getForwardTaskStatus() {
-        return forwardTaskStatus;
-    }
-
-    public void setErrorCode(String code) {
-        this.errorCode = code;
-    }
-
-    public String getErrorCode() {
-        return errorCode;
-    }
-
-    public void setDestinationAET(String targetAET) {
-        this.destinationAET = targetAET;
+    public void setDestinationAET(String destinationAET) {
+        this.destinationAET = destinationAET;
     }
 
     public String getDestinationAET() {
@@ -145,11 +109,20 @@ public class ForwardTask implements Serializable{
         return seriesInstanceUID;
     }
 
-    public void setSourceAET(String sourceAET) {
-        this.sourceAET = sourceAET;
+    public void setFilesSend(Long filesSend) {
+        this.filesSend = filesSend;
     }
 
-    public String getSourceAET() {
-        return sourceAET;
+    public Long getFilesSend() {
+        return filesSend;
     }
+
+    public void setTransferTime(Long transferTime) {
+        this.transferTime = transferTime;
+    }
+
+    public Long getTransferTime() {
+        return transferTime;
+    }
+
 }

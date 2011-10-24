@@ -40,6 +40,7 @@ package org.dcm4chee.proxy.beans.send;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Time;
 import java.util.List;
 import java.util.Map;
 
@@ -76,8 +77,10 @@ import org.dcm4che.net.Priority;
 import org.dcm4che.net.pdu.AAssociateRQ;
 import org.dcm4che.net.pdu.PresentationContext;
 import org.dcm4che.util.SafeClose;
+import org.dcm4chee.proxy.ejb.AuditLogManager;
 import org.dcm4chee.proxy.ejb.FileCacheManager;
 import org.dcm4chee.proxy.ejb.ForwardTaskManager;
+import org.dcm4chee.proxy.persistence.AuditLog;
 import org.dcm4chee.proxy.persistence.FileCache;
 import org.dcm4chee.proxy.persistence.ForwardTask;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
@@ -98,6 +101,9 @@ public class ForwardTaskListener implements MessageListener {
     
     @EJB
     private FileCacheManager fileCacheMgr;
+    
+    @EJB
+    private AuditLogManager auditLogMgr;
     
     private QueueConnectionFactory qconFactory;
     private Queue queue;
@@ -211,9 +217,11 @@ public class ForwardTaskListener implements MessageListener {
     
     @SuppressWarnings("unchecked")
     public void sendFiles(ForwardTask ft) throws IOException {
+        long t1, t2, send = 0;
         try {
             Map<String, Templates> map = (Map<String, Templates>) ae.getProperty("Retrieve.coercions");
             templates = map.get(ft.getDestinationAET());
+            t1 = System.currentTimeMillis();
             for (FileCache fc : fileCacheList) {
                 if (as.isReadyForDataTransfer()) {
                     String fpath = fc.getFilePath();
@@ -222,11 +230,14 @@ public class ForwardTaskListener implements MessageListener {
                     String ts = fc.getTransferSyntaxUID();
                     try {
                         send(new File(fpath), cuid, iuid, ts);
+                        send++;
                     } catch (NoPresentationContextException e) {
                         LOG.error(e.getMessage());
                     }
                 }
             }
+            t2 = System.currentTimeMillis();
+            writeAuditLog(ft, t2 - t1, send);
             forwardTaskMgr.remove(ft.getPk());
         } catch (Exception e) {
             LOG.error(e.getMessage());
@@ -238,6 +249,16 @@ public class ForwardTaskListener implements MessageListener {
                 LOG.error(ie.getMessage());
             }
         }
+    }
+
+    private void writeAuditLog(ForwardTask ft, long duration, long send) {
+        AuditLog log = new AuditLog();
+        log.setDestinationAET(ft.getDestinationAET());
+        log.setFilesSend(send);
+        log.setSeriesInstanceUID(ft.getSeriesInstanceUID());
+        log.setSourceAET(ft.getSourceAET());
+        log.setTransferTime(duration);
+        auditLogMgr.persist(log);
     }
     
     public void send(final File f, String cuid, String iuid,

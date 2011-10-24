@@ -107,7 +107,7 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
         String fsUID = UIDUtils.createUID();
         fileCacheMgr.setFilesetUID(fsUID, seriesIUID, sourceAET);
         for (AESchedule destinationAET : destinationAETs) {
-            ForwardTask ft = storeForwardTask(fsUID, destinationAET.AETitle);
+            ForwardTask ft = storeForwardTask(fsUID, seriesIUID, sourceAET, destinationAET.AETitle);
             sendStoreSCPMessage(ft , destinationAET.scheduleTime);
         }
     }
@@ -157,10 +157,13 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
         .getResultList();
     }
 
-    private ForwardTask storeForwardTask(String fsUID, String destinationAET) {
+    private ForwardTask storeForwardTask(String fsUID, String seriesInstanceUID, 
+            String sourceAET, String destinationAET) {
         ForwardTask ft = new ForwardTask();
         ft.setFilesetUID(fsUID);
+        ft.setSeriesInstanceUID(seriesInstanceUID);
         ft.setForwardTaskStatus(ForwardTaskStatus.SCHEDULED);
+        ft.setSourceAET(sourceAET);
         ft.setDestinationAET(destinationAET);
         ft.setErrorCode("-");
         persist(ft);
