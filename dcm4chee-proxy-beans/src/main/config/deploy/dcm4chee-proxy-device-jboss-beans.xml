@@ -173,6 +173,16 @@
       </parameter>
     </install>
     <install method="setProperty">
+      <parameter>Interval.forwardSchedule</parameter>
+      <parameter>
+        <javabean xmlns="urn:jboss:javabean:2.0" class="java.lang.Integer">
+          <constructor>
+            <property name="anInteger">10</property><!-- time in seconds -->
+          </constructor>
+        </javabean>
+      </parameter>
+    </install>
+    <install method="setProperty">
       <parameter>Retrieve.coercions</parameter>
       <parameter>
         <map keyClass="java.lang.String" valueClass="javax.xml.transform.Templates">

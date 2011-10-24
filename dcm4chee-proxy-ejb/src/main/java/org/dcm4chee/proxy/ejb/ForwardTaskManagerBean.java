@@ -38,11 +38,13 @@
 
 package org.dcm4chee.proxy.ejb;
 
+import java.util.Calendar;
 import java.util.List;
 
 import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
+import javax.ejb.TimerService;
 import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
@@ -57,6 +59,8 @@ import org.dcm4che.util.UIDUtils;
 import org.dcm4chee.proxy.ejb.FileCacheManagerBean.AESchedule;
 import org.dcm4chee.proxy.persistence.ForwardTask;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
@@ -65,8 +69,17 @@ import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 @Stateless
 public class ForwardTaskManagerBean implements ForwardTaskManager {
     
+    private static final Logger LOG =
+        LoggerFactory.getLogger(ForwardTaskManagerBean.class);
+    
     @EJB
     private FileCacheManager fileCacheMgr;
+    
+    @EJB
+    private DeviceHolder device;
+    
+    @Resource
+    TimerService timerService;
     
     @Resource(mappedName="java:/JmsXA")
     private QueueConnectionFactory qconFactory;
@@ -94,9 +107,23 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
         String fsUID = UIDUtils.createUID();
         fileCacheMgr.setFilesetUID(fsUID, seriesIUID, sourceAET);
         for (AESchedule destinationAET : destinationAETs) {
-            ForwardTask ft = storeForwardTask(fsUID, destinationAET.getAETitle());
-            //TODO: get destination dateTime parameters
-            sendStoreSCPMessage(ft);
+            ForwardTask ft = storeForwardTask(fsUID, destinationAET.AETitle);
+            sendStoreSCPMessage(ft , destinationAET.scheduleTime);
+        }
+    }
+    
+    @Override
+    public void rescheduleFailedForwardTasks() throws JMSException {
+        int forwardScheduleInterval = 
+            (Integer) device.getDevice().getProperty("Interval.forwardSchedule");
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.SECOND, forwardScheduleInterval);
+        List<ForwardTask> ftl = findForwardTaskByStatus(ForwardTaskStatus.FAILED);
+        if (!ftl.isEmpty()) {
+            for (ForwardTask ft : findForwardTaskByStatus(ForwardTaskStatus.FAILED)){
+                LOG.debug("Rescheduling " + ft.getFilesetUID() + " in " + forwardScheduleInterval + " seconds.");
+                sendStoreSCPMessage(ft, cal.getTimeInMillis());
+            }
         }
     }
     
@@ -109,15 +136,25 @@ public class ForwardTaskManagerBean implements ForwardTaskManager {
             .executeUpdate();
     }
     
-    private void sendStoreSCPMessage(ForwardTask ft) throws JMSException {
+    @Override
+    public void sendStoreSCPMessage(ForwardTask ft, long scheduleTime) throws JMSException {
         QueueConnection qcon = qconFactory.createQueueConnection();
         QueueSession qsession = qcon.createQueueSession(false, 0);
         QueueSender qsender = qsession.createSender(queue);
         ObjectMessage message = qsession.createObjectMessage(ft);
+        if (scheduleTime > 0)
+            message.setLongProperty("_JBM_SCHED_DELIVERY", scheduleTime);
         qsender.send(message);
         qsender.close();
         qsession.close();
         qcon.close();
+    }
+    
+    @Override
+    public List<ForwardTask> findForwardTaskByStatus(ForwardTaskStatus status) {
+        return em.createNamedQuery(ForwardTask.FIND_BY_STATUS_CODE, ForwardTask.class)
+        .setParameter(1, status)
+        .getResultList();
     }
 
     private ForwardTask storeForwardTask(String fsUID, String destinationAET) {

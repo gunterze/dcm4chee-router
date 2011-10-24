@@ -41,6 +41,7 @@ package org.dcm4chee.proxy.ejb;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -72,7 +73,6 @@ import org.dcm4che.io.DicomInputStream;
 import org.dcm4che.io.SAXWriter;
 import org.dcm4che.util.SafeClose;
 import org.dcm4chee.proxy.persistence.FileCache;
-import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -87,7 +87,7 @@ import org.xml.sax.helpers.DefaultHandler;
 public class FileCacheManagerBean implements FileCacheManager {
     
     private static final Logger LOG =
-        LoggerFactory.getLogger(ForwardTaskStatus.class);
+        LoggerFactory.getLogger(FileCacheManagerBean.class);
 
     @EJB
     private ForwardTaskManager forwardTaskMgr;
@@ -157,7 +157,7 @@ public class FileCacheManagerBean implements FileCacheManager {
         int timerInterval = (Integer) device.getDevice()
                 .getProperty("Interval.checkForNewReceivedSeries")*1000;
         schedule.second(timerInterval);
-        LOG.info("Creating checkForNewReceivedSeriesTimer with " + timerInterval/1000 
+        LOG.debug("Creating checkForNewReceivedSeriesTimer with " + timerInterval/1000 
                 + " seconds interval");
         return timerService.createIntervalTimer(timerInterval, timerInterval, timerConfig);
     }
@@ -172,17 +172,19 @@ public class FileCacheManagerBean implements FileCacheManager {
         interval.add(Calendar.SECOND, -timerInterval);
         List<String> newSeriesList = findSeriesReceivedBefore(interval.getTime());
         if (!newSeriesList.isEmpty()){
-            SAXTransformerFactory transFac = (SAXTransformerFactory) TransformerFactory.newInstance();
+            SAXTransformerFactory transFac = 
+                (SAXTransformerFactory) TransformerFactory.newInstance();
             TransformerHandler handler = transFac.newTransformerHandler(
                     (Templates) device.getDevice().getProperty("Forward.rules"));
             final ArrayList<AESchedule> destinationAETs = new ArrayList<AESchedule>();
             handler.setResult(new SAXResult(new DefaultHandler(){
                 @Override
-                public void startElement(String uri, String localName, String qName, Attributes attributes)
-                        throws SAXException {
+                public void startElement(String uri, String localName, String qName, 
+                        Attributes attributes) throws SAXException {
                     if (qName.equals("Destination")) {
                         AESchedule aes = new AESchedule(attributes.getValue("aet"), 
-                                attributes.getValue("time"), attributes.getValue("day-of-week"));
+                                    scheduleAET(attributes.getValue("dayOfWeek"), 
+                                                attributes.getValue("hour")));
                         destinationAETs.add(aes);
                         }
                     }
@@ -199,7 +201,9 @@ public class FileCacheManagerBean implements FileCacheManager {
                 }
             }
         }
+        forwardTaskMgr.rescheduleFailedForwardTasks();
     }
+    
 
     private void getDestinationParameters(TransformerHandler handler, Transformer trans,
             String seriesIUID, String sourceAET) throws IOException {
@@ -214,7 +218,6 @@ public class FileCacheManagerBean implements FileCacheManager {
         try {
             dis.setIncludeBulkData(false);
             SAXWriter writer = new SAXWriter(handler);
-//            writer.setIncludeKeyword(false);
             dis.setDicomInputHandler(writer);
             dis.readDataset(-1, Tag.PixelData);
         } finally {
@@ -222,102 +225,60 @@ public class FileCacheManagerBean implements FileCacheManager {
         }
     }
     
+    private long scheduleAET(String dayOfWeek, String hour) {
+        
+        final GregorianCalendar schedule = new GregorianCalendar();
+        GregorianCalendar startCal = new GregorianCalendar();
+        GregorianCalendar endCal = new GregorianCalendar();
+        
+        String[] days = dayOfWeek.split("-");
+        if (days.length == 2) {
+            startCal = setCalFromDay(days[0], startCal);
+            endCal = setCalFromDay(days[1], endCal);
+        }
+        
+        String[] hours = hour.split("-");
+        if (hours.length == 2) {
+            startCal = setCalFromHour(hours[0], startCal);
+            endCal = setCalFromHour(hours[1], endCal);
+        }
+        
+        Date now = schedule.getTime();
+        if(isNowBetweenDate(now, startCal.getTime(), endCal.getTime())) {
+            Integer delay = (Integer) device.getDevice().getProperty("Interval.forwardSchedule");
+            schedule.add(Calendar.SECOND, delay);
+            return schedule.getTimeInMillis();
+        }
+        return startCal.getTimeInMillis();
+    }
+    
+    private GregorianCalendar setCalFromHour(final String hh, GregorianCalendar gc) {
+        if (hh.matches("^[0-2][0-9]$"))
+            gc.set(Calendar.HOUR_OF_DAY, Integer.parseInt(hh));
+        return gc;
+    }
+    
+    private GregorianCalendar setCalFromDay(final String day, GregorianCalendar gc) {
+        final List<String> days = Arrays.asList("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat");
+        if(days.contains(day))
+            gc.set(Calendar.DAY_OF_WEEK, days.indexOf(day));
+        return gc;
+    }
+    
+    boolean isNowBetweenDate(Date now, Date start, Date end) {
+        if (start.after(end))
+            return now.after(start) || now.before(end);
+        return now.after(start) && now.before(end);
+    }
+    
     public class AESchedule {
         
-        private String AETitle;
-        private Date startTime;
-        private Date endTime;
-        private Integer startDay;
-        private Integer endDay;
-        
-        public AESchedule(String aet, String time, String weekdays){
+        public String AETitle;
+        public long scheduleTime;
+
+        public AESchedule(String aet, long st) {
             AETitle = aet;
-            String[]times = time.split("-");
-            if (times.length == 2) {
-                startTime = dateFromHourMinSec(times[0]);
-                endTime = dateFromHourMinSec(times[1]);
-            }
-            String[]days = weekdays.split("-");
-            if (days.length == 2) {
-                startDay = intFromDayString(days[0]);
-                endDay = intFromDayString(days[1]);
-            }
+            scheduleTime = st;
         }
-        
-        boolean isNowBetweenDateTime() {
-            final GregorianCalendar gc = new GregorianCalendar();
-            Date time = gc.getTime();
-            Integer day = gc.get(Calendar.DAY_OF_WEEK);
-            if (startTime.after(endTime))
-                return (time.after(startTime) || time.before(endTime)) && day>=startDay && day<=endDay;
-            return time.after(startTime) && time.before(endTime) && day>=startDay && day<=endDay;
-        }
-        
-        private Date dateFromHourMinSec(final String hhmmss) {
-            if (!hhmmss.matches("^[0-2][0-3]:[0-5][0-9]:[0-5][0-9]$")) {
-                LOG.error(hhmmss + " is not a valid time, expecting HH:MM:SS format");
-                return null;
-            }
-            
-            final String[] hms = hhmmss.split(":");
-            final GregorianCalendar gc = new GregorianCalendar();
-            gc.set(Calendar.HOUR_OF_DAY, Integer.parseInt(hms[0]));
-            gc.set(Calendar.MINUTE, Integer.parseInt(hms[1]));
-            gc.set(Calendar.SECOND, Integer.parseInt(hms[2]));
-            gc.set(Calendar.MILLISECOND, 0);
-            return gc.getTime();
-        }
-        
-        private Integer intFromDayString(final String day) {
-            String[] strDays = new String[] { "Sunday", "Monday", "Tuesday", "Wednesday", "Thusday",
-                    "Friday", "Saturday" };
-            for (int i=0; i < strDays.length; i++) {
-                if (day.equals(strDays[i])){
-                    return i;
-                }
-            }
-            return null;
-        }
-
-        public void setAETitle(String aETitle) {
-            AETitle = aETitle;
-        }
-
-        public String getAETitle() {
-            return AETitle;
-        }
-
-        public void setStartTime(Date startTime) {
-            this.startTime = startTime;
-        }
-
-        public Date getStartTime() {
-            return startTime;
-        }
-
-        public void setEndTime(Date endTime) {
-            this.endTime = endTime;
-        }
-
-        public Date getEndTime() {
-            return endTime;
-        }
-
-        public void setStartDay(Integer startDay) {
-            this.startDay = startDay;
-        }
-
-        public Integer getStartDay() {
-            return startDay;
-        }
-
-        public void setEndDay(Integer endDay) {
-            this.endDay = endDay;
-        }
-
-        public Integer getEndDay() {
-            return endDay;
-        }
-
     }
 }

@@ -42,7 +42,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import javax.ejb.EJB;
 import javax.jms.JMSException;
@@ -53,7 +52,6 @@ import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.jms.QueueReceiver;
-import javax.jms.QueueSender;
 import javax.jms.QueueSession;
 import javax.jms.Session;
 import javax.naming.InitialContext;
@@ -175,9 +173,8 @@ public class ForwardTaskListener implements MessageListener {
             forwardTaskMgr.remove(ft.getPk());
         } catch (Exception e) {
             LOG.error(e.getMessage());
-            forwardTaskMgr.updateForwardTaskStatus(ForwardTaskStatus.FAILED, e.getMessage(), 
-                    ft.getPk());
-            reschedule(ft);
+            if (!ft.getForwardTaskStatus().equals(ForwardTaskStatus.FAILED))
+                forwardTaskMgr.updateForwardTaskStatus(ForwardTaskStatus.FAILED, e.getMessage(), ft.getPk());
         } finally {
             try {
                 close();
@@ -185,31 +182,6 @@ public class ForwardTaskListener implements MessageListener {
                 LOG.error(closeError.getMessage());;
             }
         }
-    }
-    
-    private void reschedule(ForwardTask ft) {
-        final ForwardTask fft = ft;
-        ae.getDevice().schedule(rescheduleForwardTask(fft),
-                (Integer) ae.getDevice().getProperty("Interval.forwardSchedule"), TimeUnit.SECONDS);
-        //TODO: get schedule interval from aet or destination rules
-    }
-
-    private Runnable rescheduleForwardTask(final ForwardTask ft) {
-        LOG.info("Rescheduling file set " + ft.getFilesetUID());
-        return new Runnable() {
-            
-            @Override
-            public void run() {
-                try {
-                    QueueSender qsender = qsession.createSender(queue);
-                    ObjectMessage message = qsession.createObjectMessage(ft);
-                    qsender.send(message);
-                    qsender.close();
-                } catch (JMSException e) {
-                    LOG.error(e.getMessage());
-                }
-            }
-        };
     }
     
     private void addPresentationContext() throws IOException {
@@ -260,7 +232,6 @@ public class ForwardTaskListener implements MessageListener {
             LOG.error(e.getMessage());
             forwardTaskMgr.updateForwardTaskStatus(ForwardTaskStatus.FAILED, e.getMessage(), 
                     ft.getPk());
-            reschedule(ft);
             try {
                 as.waitForOutstandingRSP();
             } catch (InterruptedException ie) {
@@ -272,7 +243,7 @@ public class ForwardTaskListener implements MessageListener {
     public void send(final File f, String cuid, String iuid,
             String ts) throws IOException, InterruptedException {
         DicomInputStream in = new DicomInputStream(f);
-        Attributes attrs = in.readFileMetaInformation();
+        in.readFileMetaInformation();
         DataWriter data = createDataWriter(f);
         DimseRSPHandler rspHandler = new DimseRSPHandler(as.nextMessageID()) {
             @Override

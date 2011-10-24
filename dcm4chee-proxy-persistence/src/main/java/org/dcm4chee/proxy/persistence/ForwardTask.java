@@ -55,7 +55,9 @@ import javax.persistence.Table;
 @NamedQueries({
     @NamedQuery(name="ForwardTask.updateStatus",
             query="UPDATE ForwardTask ft SET ft.forwardTaskStatus=?1, ft.errorCode=?2 " +
-                  "WHERE ft.pk=?3")
+                  "WHERE ft.pk=?3"),
+    @NamedQuery(name="ForwardTask.findByStatus",
+            query="SELECT f from ForwardTask f WHERE f.forwardTaskStatus=?1")
 })
 @Entity
 @Table(name = "forward_task")
@@ -64,6 +66,7 @@ public class ForwardTask implements Serializable{
     private static final long serialVersionUID = 5400645502128519891L;
     
     public static final String UPDATE_STATUS = "ForwardTask.updateStatus";
+    public static final String FIND_BY_STATUS_CODE = "ForwardTask.findByStatus";
     
     @Id
     @GeneratedValue

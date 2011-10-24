@@ -45,7 +45,6 @@ import org.dcm4chee.proxy.ejb.FileCacheManager;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
- * 
  */
 public class FileCacheManagerTimer {
     

@@ -43,13 +43,11 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.jms.JMSException;
 
-import org.dcm4chee.proxy.ejb.FileCacheManagerBean.AESchedule;
 import org.dcm4chee.proxy.persistence.ForwardTask;
 import org.dcm4chee.proxy.persistence.ForwardTaskStatus;
 
 /**
  * @author Michael Backhaus <michael.backhaus@agfa.com>
- * 
  */
 @Local
 public interface ForwardTaskManager {
@@ -57,10 +55,16 @@ public interface ForwardTaskManager {
     void persist(ForwardTask forwardTask);
 
     void scheduleForwardTask(String seriesIUID, String sourceAET,
-            List<AESchedule> destinationAETs) throws JMSException;
+            List<FileCacheManagerBean.AESchedule> destinationAETs) throws JMSException;
 
     void remove(int pk);
 
     int updateForwardTaskStatus(ForwardTaskStatus status, String error, int pk);
+
+    void sendStoreSCPMessage(ForwardTask ft, long scheduleTime) throws JMSException;
+
+    List<ForwardTask> findForwardTaskByStatus(ForwardTaskStatus status);
+
+    void rescheduleFailedForwardTasks() throws JMSException;
 
 }

@@ -13,8 +13,8 @@
       </xsl:choose>
       <xsl:choose>
         <xsl:when test="$sourceAET='STORESCU'">
-         <Destination aet="STORESCP" day-of-week="Monday-Friday" time="08:00:00-18:00:00" />
-         <Destination aet="STORESCP_TLS" day-of-week="Monday-Friday" time="08:00:00-18:00:00" />
+         <Destination aet="STORESCP" dayOfWeek="Mon-Fri" hour="08-18" />
+         <Destination aet="STORESCP_TLS" dayOfWeek="Mon-Fri" hour="08-18" />
         </xsl:when>
       </xsl:choose>
     </Destinations>
