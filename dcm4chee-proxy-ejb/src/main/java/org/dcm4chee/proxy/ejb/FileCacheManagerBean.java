@@ -171,7 +171,7 @@ public class FileCacheManagerBean implements FileCacheManager {
                 .getProperty("Interval.checkForNewReceivedSeries");
         interval.add(Calendar.SECOND, -timerInterval);
         List<String> newSeriesList = findSeriesReceivedBefore(interval.getTime());
-        if (!newSeriesList.isEmpty()){
+        if ( !newSeriesList.isEmpty() ){
             SAXTransformerFactory transFac = 
                 (SAXTransformerFactory) TransformerFactory.newInstance();
             TransformerHandler handler = transFac.newTransformerHandler(
@@ -231,25 +231,28 @@ public class FileCacheManagerBean implements FileCacheManager {
         GregorianCalendar startCal = new GregorianCalendar();
         GregorianCalendar endCal = new GregorianCalendar();
         
-        String[] days = dayOfWeek.split("-");
-        if (days.length == 2) {
-            startCal = setCalFromDay(days[0], startCal);
-            endCal = setCalFromDay(days[1], endCal);
+        if ( dayOfWeek != null ) {
+            String[] days = dayOfWeek.split("-");
+            if (days.length == 2) {
+                startCal = setCalFromDay(days[0], startCal);
+                endCal = setCalFromDay(days[1], endCal);
+            }
         }
         
-        String[] hours = hour.split("-");
-        if (hours.length == 2) {
-            startCal = setCalFromHour(hours[0], startCal);
-            endCal = setCalFromHour(hours[1], endCal);
+        if ( hour != null ) {
+            String[] hours = hour.split("-");
+            if (hours.length == 2) {
+                startCal = setCalFromHour(hours[0], startCal);
+                endCal = setCalFromHour(hours[1], endCal);
+            }
         }
         
         Date now = schedule.getTime();
-        if(isNowBetweenDate(now, startCal.getTime(), endCal.getTime())) {
+        if ( !isNowBetweenDate( now, startCal.getTime(), endCal.getTime() ) ) {
             Integer delay = (Integer) device.getDevice().getProperty("Interval.forwardSchedule");
             schedule.add(Calendar.SECOND, delay);
-            return schedule.getTimeInMillis();
         }
-        return startCal.getTimeInMillis();
+        return schedule.getTimeInMillis();
     }
     
     private GregorianCalendar setCalFromHour(final String hh, GregorianCalendar gc) {

@@ -40,7 +40,6 @@ package org.dcm4chee.proxy.beans.send;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Time;
 import java.util.List;
 import java.util.Map;
 

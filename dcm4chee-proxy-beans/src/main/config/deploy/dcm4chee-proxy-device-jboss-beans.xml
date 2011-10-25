@@ -107,17 +107,7 @@
     <install method="setProperty">
       <parameter>Forward.rules</parameter>
       <parameter>
-        <map keyClass="java.lang.String" valueClass="[Ljava.lang.String;">
-          <entry>
-            <key>STORESCU</key>
-            <value>
-              <array>
-                <value>STORESCP</value>
-                <value>STORESCP_TLS</value>
-              </array>
-            </value>
-          </entry>
-        </map>
+        <inject bean="ForwardRules" />
       </parameter>
     </install>
     <install method="setProperty">
