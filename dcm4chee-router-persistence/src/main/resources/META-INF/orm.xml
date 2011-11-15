@@ -37,53 +37,24 @@
    - the terms of any one of the MPL, the GPL or the LGPL.
    -
    - ***** END LICENSE BLOCK *****  -->
-   
-<project xmlns="http://maven.apache.org/POM/4.0.0"
+
+<entity-mappings xmlns="http://java.sun.com/xml/ns/persistence/orm"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.dcm4che.dcm4chee-router</groupId>
-  <artifactId>dcm4chee-router-parent</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  <name>dcm4chee-router-parent</name>
-  <description>DICOM Router J2EE application</description>
-  <organization>
-    <name>dcm4che.org</name>
-    <url>http://dcm4che.org</url>
-  </organization>
-  <scm>
-    <connection>scm:git:https://gunterze@github.com/gunterze/dcm4chee-router.git</connection>
-    <developerConnection>scm:git:https://gunterze@github.com/gunterze/dcm4chee-router.git</developerConnection>
-    <url>https://github.com/gunterze/dcm4chee-router</url>
-  </scm>
-  <issueManagement>
-    <system>JIRA</system>
-    <url>http://dcm4che.org/jira</url>
-  </issueManagement>
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.3.2</version>
-        <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
-          <encoding>UTF-8</encoding>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>2.5</version>
-        <configuration>
-          <encoding>UTF-8</encoding>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-  <modules>
-    <module>dcm4chee-router-beans</module>
-    <module>dcm4chee-router-ejb</module>
-    <module>dcm4chee-router-persistence</module>
-  </modules>
-</project>
+  xsi:schemaLocation="http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistence/orm_1_0.xsd"
+  version="1.0">
+  
+  <package>org.dcm4chee.router.persistence</package>
+  
+  <access>FIELD</access>
+  <entity class="FileCache">
+    <table name="file_cache" />
+    <sequence-generator name="seq" sequence-name="file_cache_pk_seq" />
+    <attributes>
+      <id name="pk">
+        <column name="pk" />
+        <generated-value strategy="${generated-value-strategy}" generator="seq" />
+      </id>
+    </attributes>
+  </entity>
+
+</entity-mappings>
